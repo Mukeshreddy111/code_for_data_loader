@@ -1,0 +1,24 @@
+# TeradataConnection class - handles all Teradata related connection logic
+class TeradataConnection:
+    def __init__(self, config):
+        self.config = config
+        self.connection = None
+    def connect(self):
+    def execute_query(self, query):
+    def close(self):
+       
+
+# OracleConnection class (handles all oracle related connection logic)
+class OracleConnection:
+    def __init__(self, config):
+        self.config = config
+        self.connection = None
+    def connect(self):     
+    def execute_query(self, query):       
+    def close(self):
+        
+		
+teradata_conn = TeradataConnection(g_configuration)        
+teradata_conn.connect()
+file_name = teradata_conn.execute_query("SELECT * FROM my_table")
+teradata_conn.close()
