@@ -1,0 +1,164 @@
+
+import argparse
+import json
+import logging
+import os
+import sys
+import pydoop.hdfs
+import teradatasql
+from deepmerge import always_merger
+from typing import List, Dict
+
+# Configuration constants
+TERADATA_HOST = "host"
+TERADATA_ISOLN_MECHANISM = "logmech"
+TERADATA_TRANSACTION_MODE = "tmode"
+TERADATA_ENCRYPT_DATA = "encrypt_data"
+IMPALA_DATAFILE_PATH = "datafile_path"
+DATASET_PARAMS = "dataset_params"
+DATASOURCE_PARAMS = "datasource_params"
+DATASET_CONFIG = "dataset_config"
+IMPALA_PARAMS = "impala_params"
+PARQUET_MAPPINGS = "parquet_options"
+
+# Initialize global variables
+g_configuration = {}
+logger = logging.getLogger('teradata-data-loader')
+args = None
+
+# Setup logging
+def setup_logging(log_level):
+    if log_level is None:
+        log_level = logging.INFO
+    else:
+        log_level = logging.getLevelName(log_level)
+
+    logging.basicConfig(level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.getLogger('requests_kerberos').setLevel(logging.INFO)
+    logging.getLogger('requests_sspi').setLevel(logging.INFO)
+    logging.getLogger('s3transfer').setLevel(logging.INFO)
+    logging.getLogger('urllib3.connectionpool').setLevel(logging.INFO)
+
+
+# TeradataConnection class - handles all Teradata related connection logic
+class TeradataConnection:
+    def __init__(self, config):
+        self.config = config
+        self.connection = None
+
+    def connect(self):
+        try:
+            logger.info(f"Connecting to Teradata host: {self.config[TERADATA_HOST]}")
+            self.connection = teradatasql.connect(host=self.config[TERADATA_HOST], user=self.config["user"], password=self.config["password"])
+        except Exception as e:
+            logger.error(f"Failed to connect to Teradata: {e}")
+            raise
+
+    def execute_query(self, query):
+        if not self.connection:
+            self.connect()
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(query)
+                results = cursor.fetchall()
+            return results
+        except Exception as e:
+            logger.error(f"Error executing query on Teradata: {e}")
+            raise
+
+    def close(self):
+        if self.connection:
+            logger.info("Closing Teradata connection")
+            self.connection.close()
+
+# OracleConnection class (Placeholder for Oracle handling)
+class OracleConnection:
+    def __init__(self, config):
+        self.config = config
+        self.connection = None
+
+    def connect(self):
+        # Placeholder for Oracle connection logic
+        logger.info("Connecting to Oracle database...")
+        pass
+
+    def execute_query(self, query):
+        # Placeholder for executing queries on Oracle
+        logger.info("Executing Oracle query...")
+        pass
+
+    def close(self):
+        # Placeholder for closing Oracle connection
+        logger.info("Closing Oracle connection...")
+        pass
+
+# Argument parser
+def make_argument_parser():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    storage_targets = ["local", "hdfs", "both"]
+
+    parser.add_argument("--config-file", required=True, type=argparse.FileType('r'), help="Config file(s) (json format)")
+    parser.add_argument("--log-level", required=False, help="Set the log level")
+    parser.add_argument("--storage-target", default=storage_targets[0], choices=storage_targets, help="Select storage target")
+    parser.add_argument("--flatten-directory-structure", action="store_false", default=True, help="Write all files to the target directory without subdirectories")
+    parser.add_argument("--output-csv-file-name", type=str, help="Output file name")
+    parser.add_argument("--parse-only", action="store_true", help="Only Parse Args and exit")
+    return parser
+
+# Function for handling HDFS writing (unchanged)
+def put_hdfs(override_existing_datasets=True):
+    logger.debug(f"Using dataset directory {g_configuration['output_csv_file_name']}")
+    if not override_existing_datasets and pydoop.hdfs.exists(g_configuration['output_csv_file_name']):
+        logger.warning(f"Target file already exists and override is NOT allowed")
+        return False, "Cannot overwrite existing file"
+    
+    try:
+        pydoop.hdfs.put(g_configuration['output_csv_file_name'], g_configuration['output_csv_file_name'])
+        logger.info(f"Successfully wrote output to HDFS")
+        return True, "Success writing to HDFS"
+    except Exception as e:
+        logger.error(f"Error writing to HDFS: {e}")
+        return False, f"Error writing to HDFS: {e}"
+
+# Main function flow
+def main_run():
+    global g_configuration, args
+
+    if args.query_metadata_file:
+        with args.query_metadata_file as cfg:
+            query_metadata_config = json.loads(cfg.read())
+            logger.debug(json.dumps(query_metadata_config, indent=2))
+            metadata = extract_metadata(query_metadata_config)
+            logger.info(json.dumps(metadata, indent=2))
+
+    if args.execute_query:
+        # Example Teradata query execution
+        teradata_conn = TeradataConnection(g_configuration)
+        try:
+            teradata_conn.connect()
+            file_name = teradata_conn.execute_query("SELECT * FROM my_table")
+            teradata_conn.close()
+        except Exception as e:
+            logger.error(f"Query execution failed: {e}")
+
+        # Oracle query execution can be handled in similar way when required using OracleConnection
+
+# Main function for parsing and running
+def main():
+    global g_configuration
+    initialize()
+
+    if args.parse_only:
+        logger.debug("Parse args only mode")
+        logger.debug(json.dumps(g_configuration, indent=2))
+        return
+
+    main_run()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except RuntimeError as e:
+        logger.error(f"EXITING with {e}")
+        sys.exit(1)
+    sys.exit(0)
