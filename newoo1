@@ -1,0 +1,53 @@
+import oracledb
+import json
+
+# Mapping Oracle DB types to general data types
+oracle_type_to_general = {
+    "DB_TYPE_VARCHAR": "string",
+    "DB_TYPE_VARCHAR2": "string",
+    "DB_TYPE_CHAR": "string",
+    "DB_TYPE_CLOB": "string",
+    "DB_TYPE_NUMBER": "integer",
+    "DB_TYPE_FLOAT": "float",
+    "DB_TYPE_DATE": "date",
+    "DB_TYPE_TIMESTAMP": "timestamp",
+    "DB_TYPE_TIMESTAMP_TZ": "timestamp",
+    "DB_TYPE_BLOB": "binary",
+    "DB_TYPE_RAW": "binary"
+    # Add more types as needed
+}
+
+# Establish a connection to the Oracle database
+# Replace 'username', 'password', 'hostname', 'service_name' with your Oracle database credentials
+connection = oracledb.connect(user="username", password="password", dsn="hostname/service_name")
+
+# Create a cursor object
+cursor = connection.cursor()
+
+# Execute the SELECT * query on the table
+# Replace 'table1' with your actual table name
+query = "SELECT * FROM table1 WHERE ROWNUM = 1"  # Limit to 1 row to get metadata only
+
+cursor.execute(query)
+
+# Fetch column metadata
+columns = cursor.description
+
+# Create a list of dictionaries containing column names and their general data types
+columns_list = [
+    {
+        "column_name": col[0],
+        "data_type": oracle_type_to_general.get(col[1].name, "unknown")  # default to 'unknown' if type is not in the mapping
+    } 
+    for col in columns
+]
+
+# Convert the list to JSON format
+columns_json = json.dumps(columns_list, indent=4)
+
+# Output the JSON data
+print(columns_json)
+
+# Close the cursor and connection
+cursor.close()
+connection.close()
