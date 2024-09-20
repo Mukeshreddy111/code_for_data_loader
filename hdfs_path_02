@@ -1,0 +1,32 @@
+from hdfs import InsecureClient
+import os
+
+# HDFS configurations
+HDFS_URL = 'http://namenode_host:port'  # Replace with actual HDFS namenode URL
+HDFS_PATH = '/path/to/check'  # Path you want to check on HDFS
+ARCHIVE_PATH = '/path/to/archive'  # Archive path on HDFS
+LOCAL_FILE = '/path/to/local/file'  # Local file to upload
+
+# Create an HDFS client
+client = InsecureClient(HDFS_URL, user='hdfs')
+
+def check_and_move_file(hdfs_path, archive_path, local_file):
+    # Check if the HDFS path exists
+    if client.status(hdfs_path, strict=False):
+        print(f"The path {hdfs_path} exists. Moving to archive.")
+        # Move the file to the archive path
+        filename = os.path.basename(hdfs_path)
+        archive_full_path = os.path.join(archive_path, filename)
+        
+        client.rename(hdfs_path, archive_full_path)
+        print(f"Moved {hdfs_path} to {archive_full_path}")
+    else:
+        print(f"The path {hdfs_path} does not exist. Creating path and uploading file.")
+        # Create the path and upload file
+        if not client.status(archive_path, strict=False):
+            client.makedirs(archive_path)
+        client.upload(hdfs_path, local_file)
+        print(f"Uploaded {local_file} to {hdfs_path}")
+
+# Call the function
+check_and_move_file(HDFS_PATH, ARCHIVE_PATH, LOCAL_FILE)
