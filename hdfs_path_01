@@ -1,0 +1,59 @@
+import os
+import subprocess
+
+def hdfs_path_exists(hdfs_path):
+    """
+    Check if a given HDFS path exists
+    """
+    cmd = f"hdfs dfs -test -e {hdfs_path}"
+    result = subprocess.run(cmd, shell=True)
+    if result.returncode == 0:
+        return True
+    else:
+        return False
+
+def move_hdfs_path(hdfs_path, archive_path):
+    """
+    Move HDFS path to archive
+    """
+    cmd = f"hdfs dfs -mv {hdfs_path} {archive_path}"
+    subprocess.run(cmd, shell=True, check=True)
+    print(f"Moved {hdfs_path} to {archive_path}")
+
+def create_hdfs_path(hdfs_path):
+    """
+    Create a new HDFS path
+    """
+    cmd = f"hdfs dfs -mkdir -p {hdfs_path}"
+    subprocess.run(cmd, shell=True, check=True)
+    print(f"Created HDFS directory: {hdfs_path}")
+
+def put_file_to_hdfs(local_file, hdfs_path):
+    """
+    Upload a file from the current directory to the specified HDFS path
+    """
+    cmd = f"hdfs dfs -put {local_file} {hdfs_path}"
+    subprocess.run(cmd, shell=True, check=True)
+    print(f"Uploaded {local_file} to HDFS: {hdfs_path}")
+
+def main(hdfs_path, archive_path, local_file):
+    if hdfs_path_exists(hdfs_path):
+        print(f"HDFS path {hdfs_path} exists.")
+        move_hdfs_path(hdfs_path, archive_path)
+    else:
+        print(f"HDFS path {hdfs_path} does not exist.")
+        create_hdfs_path(hdfs_path)
+        put_file_to_hdfs(local_file, hdfs_path)
+
+if __name__ == "__main__":
+    # HDFS path to check
+    hdfs_path = "/user/hadoop/data"
+    
+    # Archive path to move existing HDFS directory to
+    archive_path = "/user/hadoop/archive/data"
+    
+    # Local file to upload if the HDFS path does not exist
+    local_file = "myfile.txt"
+    
+    # Run the process
+    main(hdfs_path, archive_path, local_file)
