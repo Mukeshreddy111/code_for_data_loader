@@ -1,0 +1,10 @@
+import os
+
+# Get the current working directory
+current_directory = os.getcwd()
+print("Current Directory:", current_directory)
+
+# Assuming "Filename" is in the current directory
+filename_path = os.path.join(current_directory, "Filename")
+directory = os.path.dirname(filename_path)
+print("Directory:", directory)
