@@ -1,0 +1,56 @@
+def check_and_recreate_table(spark, table_name, ddl_statement):
+    """
+    Checks if a Hive table exists, retrieves its location, drops the table if it exists,
+    and executes the provided DDL statement to create a new table.
+
+    :param spark: SparkSession object
+    :param table_name: Name of the table to check
+    :param ddl_statement: DDL statement to create a new table
+    """
+    # Check if the table exists
+    table_exists = spark.sql(f"SHOW TABLES LIKE '{table_name}'").count() > 0
+
+    if table_exists:
+        # Get the location of the table
+        location_info = spark.sql(f"DESCRIBE FORMATTED {table_name}")
+        table_location = location_info.filter(location_info.col_name == 'Location').collect()[0][1]
+        
+        print(f"Table location: {table_location}")
+
+        # Drop the table
+        spark.sql(f"DROP TABLE {table_name}")
+        print(f"Table '{table_name}' dropped.")
+    else:
+        print(f"Table '{table_name}' does not exist.")
+
+    # Execute the DDL statement to create the new table
+    spark.sql(ddl_statement)
+    print(f"Table '{table_name}' created with the provided DDL.")
+
+# Example usage:
+if _name_ == "_main_":
+    from pyspark.sql import SparkSession
+
+    # Initialize Spark Session
+    spark = SparkSession.builder \
+        .appName("Check and Recreate Table") \
+        .enableHiveSupport() \
+        .getOrCreate()
+
+    # Define the table name and DDL statement
+    table_name = "your_table_name"
+    ddl_statement = """
+    CREATE TABLE your_table_name (
+        id INT,
+        name STRING
+    )
+    PARTITIONED BY (year INT)
+    STORED AS PARQUET
+    LOCATION 'hdfs://path/to/your/table'
+    """
+
+    # Call the function
+    check_and_recreate_table(spark, table_name, ddl_statement)
+
+    # Stop Spark Session
+    spark.stop()
