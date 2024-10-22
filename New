@@ -1,0 +1,1 @@
+The tasks include migrating IRR CIDW production data to the Data Lake, splitting and validating EVE nonras data, updating backup directories, enabling support for table recreation, loading TeradataSQL from efs, ensuring QF metrics are available for CIO, restoring IRR data in PROD HDFS, and improving reload capabilities.
