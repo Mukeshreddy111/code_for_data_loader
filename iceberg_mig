@@ -1,0 +1,67 @@
+from pyspark.sql import SparkSession
+import argparse
+
+def migrate_table(hive_db, hive_table, iceberg_catalog, iceberg_db, iceberg_table, format_version=2, handle_timestamp=False, delete_hive=False):
+    # Initialize Spark session with Iceberg configurations
+    spark_builder = SparkSession.builder \
+        .appName("HiveToIcebergMigration") \
+        .config(f"spark.sql.catalog.{iceberg_catalog}", "org.apache.iceberg.spark.SparkCatalog") \
+        .config(f"spark.sql.catalog.{iceberg_catalog}.type", "hive") \
+        .config(f"spark.sql.catalog.{iceberg_catalog}.warehouse", "s3://my-iceberg-warehouse/") \
+        .enableHiveSupport()
+
+    # Configure handling of timestamps without time zones if specified
+    if handle_timestamp:
+        spark_builder = spark_builder \
+            .config("spark.sql.iceberg.handle-timestamp-without-timezone", "true") \
+            .config("spark.sql.iceberg.use-timestamp-without-timezone-in-new-tables", "true")
+
+    # Create Spark session
+    spark = spark_builder.getOrCreate()
+
+    # Read data from Hive table
+    print(f"Reading data from Hive table {hive_db}.{hive_table}...")
+    hive_table_df = spark.sql(f"SELECT * FROM {hive_db}.{hive_table}")
+
+    # Define full Iceberg table name
+    iceberg_table_full = f"{iceberg_catalog}.{iceberg_db}.{iceberg_table}"
+
+    # Write data to Iceberg table with specified format version
+    print(f"Writing data to Iceberg table {iceberg_table_full} with format version {format_version}...")
+    hive_table_df.writeTo(iceberg_table_full).option("format-version", str(format_version)).createOrReplace()
+
+    # Optionally delete the original Hive table after migration
+    if delete_hive:
+        print(f"Dropping original Hive table {hive_db}.{hive_table}...")
+        spark.sql(f"DROP TABLE IF EXISTS {hive_db}.{hive_table}")
+        print("Hive table deleted.")
+
+    print("Migration complete.")
+    spark.stop()
+
+if __name__ == "__main__":
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Migrate Hive table to Iceberg.")
+    parser.add_argument("hive_db", help="Hive database name")
+    parser.add_argument("hive_table", help="Hive table name")
+    parser.add_argument("iceberg_catalog", help="Iceberg catalog name")
+    parser.add_argument("iceberg_db", help="Iceberg database name")
+    parser.add_argument("iceberg_table", help="Iceberg table name")
+    parser.add_argument("--format-version", type=int, default=2, help="Iceberg format version (default: 2)")
+    parser.add_argument("--handle-timestamp", action="store_true", help="Handle timestamp without timezone")
+    parser.add_argument("--delete-hive", action="store_true", help="Delete Hive table after migration")
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Execute migration
+    migrate_table(
+        hive_db=args.hive_db,
+        hive_table=args.hive_table,
+        iceberg_catalog=args.iceberg_catalog,
+        iceberg_db=args.iceberg_db,
+        iceberg_table=args.iceberg_table,
+        format_version=args.format_version,
+        handle_timestamp=args.handle_timestamp,
+        delete_hive=args.delete_hive
+    )
