@@ -1,0 +1,172 @@
+import argparse
+from pyspark.sql import SparkSession
+from pyspark.sql.types import IntegerType, FloatType, DoubleType, DateType
+from pyspark.sql.utils import AnalysisException
+from pyspark.sql import functions as F
+
+class HiveToIcebergMigration:
+    def __init__(self, args):
+        # Initialize Spark Session with optimized configurations
+        self.spark = SparkSession.builder \
+            .appName("HiveToIcebergMigration") \
+            .config("spark.sql.shuffle.partitions", args.shuffle_partitions) \
+            .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+            .config("spark.sql.files.maxPartitionBytes", args.max_partition_bytes) \
+            .enableHiveSupport() \
+            .getOrCreate()
+        
+        # Configuration from arguments
+        self.source_table = args.source_table
+        self.target_table = args.target_table
+        self.validation = args.validation
+        self.batch_size = args.batch_size
+        self.partition_by = args.partition_by
+        self.dry_run = args.dry_run
+        self.num_partitions = args.num_partitions
+        self.load_mode = args.load_mode
+        self.start_date = args.start_date
+        self.end_date = args.end_date
+
+    def schema_validation(self):
+        try:
+            # Load source and target table schemas
+            source_df = self.spark.table(self.source_table)
+            if not self.dry_run:
+                target_df = self.spark.table(self.target_table)
+                
+            # Validate schema compatibility
+            source_schema = source_df.schema
+            if not self.dry_run:
+                target_schema = target_df.schema
+
+            # Check schema structure
+            for source_field in source_schema:
+                if not self.dry_run:
+                    target_field = target_schema[source_field.name]
+                    if source_field.dataType != target_field.dataType:
+                        raise ValueError(f"Data type mismatch for column '{source_field.name}': "
+                                         f"{source_field.dataType} != {target_field.dataType}")
+            print("Schema validation successful!")
+        except AnalysisException as e:
+            print(f"Schema validation failed: {e}")
+    
+    def load_data(self):
+        # Load full or filtered data based on load mode
+        source_df = self.spark.table(self.source_table)
+
+        if self.load_mode == "adhoc" and self.start_date and self.end_date:
+            # Filter the data based on the provided date range
+            source_df = source_df.filter(
+                (F.col("date_column") >= F.lit(self.start_date)) & 
+                (F.col("date_column") <= F.lit(self.end_date))
+            )
+            print(f"Loaded data for date range: {self.start_date} to {self.end_date}")
+        elif self.load_mode == "full":
+            print("Loaded full data for migration.")
+        else:
+            raise ValueError("Invalid load mode or missing date range for ad-hoc mode.")
+        
+        return source_df
+
+    def data_migration(self):
+        try:
+            # Load data based on the selected load mode
+            source_df = self.load_data()
+
+            # Repartition for parallel processing
+            if self.num_partitions:
+                source_df = source_df.repartition(self.num_partitions)
+            elif self.partition_by:
+                source_df = source_df.repartition(self.partition_by)
+
+            # Write data to Iceberg format in optimized batches
+            source_df.write \
+                .format("iceberg") \
+                .mode("append") \
+                .option("batchSize", self.batch_size) \
+                .save(self.target_table)
+            print("Data migration completed successfully!")
+        except Exception as e:
+            print(f"Data migration failed: {e}")
+
+    def data_validation(self):
+        try:
+            source_df = self.load_data()
+            target_df = self.spark.table(self.target_table)
+
+            # Row count validation
+            source_count = source_df.count()
+            target_count = target_df.count()
+            if source_count != target_count:
+                print(f"Row count mismatch: Source={source_count}, Target={target_count}")
+            else:
+                print("Row count validation successful!")
+
+            # Column-level aggregate validation for numeric columns
+            numeric_columns = [f.name for f in source_df.schema.fields if isinstance(f.dataType, (IntegerType, FloatType, DoubleType))]
+            for col in numeric_columns:
+                source_sum = source_df.agg({col: "sum"}).collect()[0][0]
+                target_sum = target_df.agg({col: "sum"}).collect()[0][0]
+                if source_sum != target_sum:
+                    print(f"Data mismatch in column '{col}': Source sum={source_sum}, Target sum={target_sum}")
+                else:
+                    print(f"Column '{col}' sum validation successful!")
+
+            # Null value validation
+            for col in source_df.columns:
+                source_null_count = source_df.filter(source_df[col].isNull()).count()
+                target_null_count = target_df.filter(target_df[col].isNull()).count()
+                if source_null_count != target_null_count:
+                    print(f"Null count mismatch in column '{col}': Source={source_null_count}, Target={target_null_count}")
+                else:
+                    print(f"Null value validation successful for column '{col}'.")
+
+            # Sample data validation (enhanced to use hashes for better comparison on larger tables)
+            source_sample_hash = source_df.sample(fraction=0.1).selectExpr("hash(*) as hash").collect()
+            target_sample_hash = target_df.sample(fraction=0.1).selectExpr("hash(*) as hash").collect()
+            if source_sample_hash != target_sample_hash:
+                print("Data mismatch found in sample validation.")
+            else:
+                print("Sample data validation successful!")
+
+        except Exception as e:
+            print(f"Data validation failed: {e}")
+
+    def run(self):
+        print("Starting Hive to Iceberg migration utility with performance optimizations...")
+        # Step 1: Schema Validation
+        self.schema_validation()
+        
+        # Step 2: Data Migration
+        if not self.dry_run:
+            self.data_migration()
+        
+        # Step 3: Data Validation
+        if self.validation and not self.dry_run:
+            self.data_validation()
+        
+        print("Migration completed!")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Hive to Iceberg Migration Utility with Performance Optimizations and Load Modes")
+    parser.add_argument("--source_table", type=str, required=True, help="Source Hive table")
+    parser.add_argument("--target_table", type=str, required=True, help="Target Iceberg table")
+    parser.add_argument("--validation", action="store_true", help="Enable post-migration data validation")
+    parser.add_argument("--batch_size", type=int, default=1000, help="Batch size for data migration")
+    parser.add_argument("--partition_by", type=str, nargs='+', help="Column(s) to partition by for migration")
+    parser.add_argument("--dry_run", action="store_true", help="Perform a dry run (schema validation only)")
+    parser.add_argument("--num_partitions", type=int, default=None, help="Number of partitions for parallel processing")
+    parser.add_argument("--shuffle_partitions", type=int, default=200, help="Number of shuffle partitions for Spark SQL")
+    parser.add_argument("--max_partition_bytes", type=str, default="128MB", help="Maximum partition size for file partitioning")
+    parser.add_argument("--load_mode", type=str, choices=["full", "adhoc"], required=True, help="Specify the load mode: 'full' or 'adhoc'")
+    parser.add_argument("--start_date", type=str, help="Start date for ad-hoc load mode (yyyy-mm-dd)")
+    parser.add_argument("--end_date", type=str, help="End date for ad-hoc load mode (yyyy-mm-dd)")
+    
+    args = parser.parse_args()
+    
+    # Validate date range input for ad-hoc mode
+    if args.load_mode == "adhoc" and (not args.start_date or not args.end_date):
+        parser.error("Ad-hoc mode requires both --start_date and --end_date.")
+    
+    migration_tool = HiveToIcebergMigration(args)
+    migration_tool.run()
