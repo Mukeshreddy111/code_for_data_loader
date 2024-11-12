@@ -1,0 +1,9 @@
+py_ice_test.py \
+    --hive_db my_hive_db \
+    --hive_table my_hive_table \
+    --iceberg_catalog my_iceberg_catalog \
+    --iceberg_db my_iceberg_db \
+    --iceberg_table my_iceberg_table \
+    --format-version 2 \
+    --handle-timestamp \
+    --delete-hive
