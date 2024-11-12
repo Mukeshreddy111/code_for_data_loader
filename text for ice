@@ -1,0 +1,211 @@
+Here are some sample execution scripts to run the above code with different features, demonstrating various configurations like full load, ad-hoc load with date range, and data validation with performance optimizations.
+
+1. Basic Full Load Execution
+This example performs a full load of the entire source table into the target Iceberg table.
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode full \
+    --batch_size 5000 \
+    --shuffle_partitions 300 \
+    --num_partitions 20
+Explanation:
+Full Load Mode: Loads the entire source table.
+Batch Size: Sets batch size for writing to the target as 5000 rows.
+Shuffle Partitions: Sets Spark shuffle partitions to 300 for better parallelization.
+Number of Partitions: Repartitions the source data into 20 partitions for efficient parallel processing.
+2. Ad-hoc Load with Date Range (Subset of Data)
+This example performs an ad-hoc load of data for a specific date range (e.g., data between January 1, 2023, and December 31, 2023).
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode adhoc \
+    --start_date 2023-01-01 \
+    --end_date 2023-12-31 \
+    --batch_size 5000 \
+    --partition_by date_column \
+    --num_partitions 10
+Explanation:
+Ad-hoc Load Mode: Loads only data between start_date and end_date.
+Date Range: Filters data from January 1, 2023, to December 31, 2023.
+Partitioning by Date Column: Partitions data by date_column for efficient handling of time-based data.
+Batch Size and Partitions: Specifies batch size as 5000 and sets 10 partitions to balance memory usage and processing speed.
+3. Full Load with Data Validation Enabled
+This example performs a full load and also enables post-migration data validation to check for consistency between the source and target tables.
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode full \
+    --validation \
+    --batch_size 2000 \
+    --shuffle_partitions 200 \
+    --max_partition_bytes 256MB
+Explanation:
+Validation Enabled: The --validation flag triggers data validation after the migration.
+Full Load Mode: Loads the entire source table.
+Batch Size: Reduces batch size to 2000 to manage memory usage better.
+Shuffle Partitions: Sets shuffle partitions to 200 for distributed processing.
+Max Partition Bytes: Limits each partition size to 256MB to optimize memory and I/O during processing.
+4. Ad-hoc Load with Data Validation and Dry Run Mode
+This example performs a dry run to validate the schema compatibility without actually migrating data. The date range is specified for an ad-hoc migration, but the --dry_run flag skips actual data migration.
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode adhoc \
+    --start_date 2023-06-01 \
+    --end_date 2023-06-30 \
+    --validation \
+    --dry_run
+Explanation:
+Dry Run Mode: The --dry_run flag only performs schema validation, not data migration.
+Validation Enabled: Runs validations as part of the dry run (although only schema validation is possible in dry mode).
+Ad-hoc Mode with Date Range: Loads only data between June 1, 2023, and June 30, 2023, if the dry run were disabled.
+5. Ad-hoc Load with Optimized Parallel Processing
+This example performs an ad-hoc load with optimized parallel processing for large datasets using a date range.
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode adhoc \
+    --start_date 2023-01-01 \
+    --end_date 2023-12-31 \
+    --batch_size 10000 \
+    --shuffle_partitions 500 \
+    --num_partitions 50 \
+    --max_partition_bytes 512MB
+Explanation:
+Optimized for Large Datasets:
+Batch Size: Increased to 10,000 for faster processing.
+Shuffle Partitions: Set to 500 for high parallelization.
+Number of Partitions: Set to 50 to spread processing across more executors.
+Max Partition Bytes: Increased to 512MB to handle large files.
+Ad-hoc Mode: Loads only data within the specified date range.
+6. Full Load with Specific Column Partitioning and Validation
+This example performs a full load with partitioning based on specific columns and enables validation.
+
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode full \
+    --validation \
+    --batch_size 3000 \
+    --partition_by region_column, date_column \
+    --shuffle_partitions 250
+Explanation:
+Full Load Mode: Loads the entire dataset from the source table.
+Validation Enabled: Validates row counts, null values, column aggregates, and sample data consistency.
+Partition by Multiple Columns: Partitions data by region_column and date_column for efficient querying on these dimensions.
+Batch Size: Sets batch size to 3000 for balanced memory and performance.
+Shuffle Partitions: Sets shuffle partitions to 250.
+These sample commands illustrate the flexibility of the migration tool, allowing different configurations based on specific requirements like full load, ad-hoc load, validation, and performance optimizations. Adjust these parameters based on your environment and data volume to achieve optimal performance.
+
+
+
+
+
+
+
+You said:
+where is migration here
+ChatGPT said:
+ChatGPT
+In each of the sample execution scripts provided above, the migration occurs within the data_migration method, which handles moving data from the Hive source table to the Iceberg target table. Let’s break down the migration process to clarify where and how it fits in the code and sample commands.
+
+Migration Process in the Code
+The data_migration method is responsible for loading data from the Hive table, applying any necessary filtering, partitioning, and optimizations, and then writing the data to the Iceberg target table.
+
+Here’s a quick refresher on what the data_migration method does:
+
+python
+Copy code
+def data_migration(self):
+    try:
+        # Load data based on the selected load mode
+        source_df = self.load_data()
+
+        # Repartition for parallel processing
+        if self.num_partitions:
+            source_df = source_df.repartition(self.num_partitions)
+        elif self.partition_by:
+            source_df = source_df.repartition(self.partition_by)
+
+        # Write data to Iceberg format in optimized batches
+        source_df.write \
+            .format("iceberg") \
+            .mode("append") \
+            .option("batchSize", self.batch_size) \
+            .save(self.target_table)
+        print("Data migration completed successfully!")
+    except Exception as e:
+        print(f"Data migration failed: {e}")
+Explanation of Migration in the Sample Commands
+Each sample command initiates the migration as follows:
+
+Source and Target Tables:
+
+The --source_table argument specifies the Hive table to read from.
+The --target_table argument specifies the Iceberg table to write to.
+Loading Mode:
+
+Full Load Mode: When --load_mode full is specified, the tool reads the entire Hive table without any filters.
+Ad-hoc Mode: When --load_mode adhoc and a date range (--start_date and --end_date) are specified, the tool filters data within the specified date range before migrating.
+Writing Data:
+
+The source_df.write operation writes data from the Hive table (loaded as a DataFrame) to the Iceberg table.
+The write options include the batch size (--batch_size) and the write format (set to Iceberg).
+How Migration Works in Sample Commands
+Let’s break down the role of migration in a couple of examples:
+
+Example 1: Full Load Migration
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode full \
+    --batch_size 5000
+Migration Step: The data_migration method reads all data from hive_db.source_table and writes it to iceberg_db.target_table.
+Full Load Mode: Since --load_mode full is specified, no filtering is applied, and the entire source table is migrated.
+Example 2: Ad-hoc Migration with Date Filtering
+bash
+Copy code
+python migration_tool.py \
+    --source_table hive_db.source_table \
+    --target_table iceberg_db.target_table \
+    --load_mode adhoc \
+    --start_date 2023-01-01 \
+    --end_date 2023-12-31
+Migration Step: The data_migration method reads data from hive_db.source_table, filtering rows where the date_column falls between 2023-01-01 and 2023-12-31, and writes it to iceberg_db.target_table.
+Ad-hoc Mode: Since --load_mode adhoc is specified along with --start_date and --end_date, only a subset of the data is migrated based on the date range.
+Key Parts of the Migration
+Data Loading: The load_data() method (called within data_migration) handles loading data from Hive, applying any necessary filtering based on the mode and date range.
+Data Writing: The source_df.write operation in data_migration performs the actual migration from Hive to Iceberg by saving the DataFrame to the target Iceberg table.
+Putting It All Together
+Each sample command executes the migration step by:
+
+Reading Data from Hive: The data_migration method calls load_data() to load data from the specified Hive source table.
+Filtering Data (if needed): In ad-hoc mode, load_data() filters the data based on the specified date range before returning it to data_migration.
+Writing Data to Iceberg: The source_df.write operation writes data to the specified Iceberg target table, completing the migration.
+So, the migration occurs within each sample command through the data_migration method, which reads, filters, and writes data as specified by the command-line arguments.
+
+
+
+
+
+
