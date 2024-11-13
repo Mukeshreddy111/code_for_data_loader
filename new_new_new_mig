@@ -14,15 +14,6 @@ def convert_to_iceberg(table_name, handle_timestamp=False, format_version="1"):
     # Create Spark session
     spark = spark_builder.enableHiveSupport().getOrCreate()
     
-    # Check if the table is empty
-    try:
-        count = spark.sql(f"SELECT COUNT(*) FROM {table_name}").collect()[0][0]
-        if count == 0:
-            print(f"The table {table_name} is empty. Skipping migration.")
-            return
-    except Exception as e:
-        print(f"Error checking if the table is empty: {e}")
-        return
 
     # Attempt migration
     try:
@@ -51,7 +42,7 @@ def convert_to_iceberg(table_name, handle_timestamp=False, format_version="1"):
 if __name__ == "__main__":
     # Argument parser for command-line parameters
     parser = argparse.ArgumentParser(description="Convert Hive table to Iceberg format.")
-    parser.add_argument("table_name", type=str, help="Full name of the Hive table (e.g., my_db.my_table)")
+    parser.add_argument("--table_name", type=str, help="Full name of the Hive table (e.g., my_db.my_table)")
     parser.add_argument("--handle_timestamp", action="store_true", help="Option to handle timestamps without time zones")
     parser.add_argument("--format_version", type=str, choices=["1", "2"], default="1", help="Iceberg format version to use (1 or 2)")
 
