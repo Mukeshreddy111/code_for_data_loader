@@ -1,20 +1,25 @@
 from pyspark.sql import SparkSession
 import argparse
 
-def convert_to_iceberg(table_name, ignore_timezones=False, delete_backup=False):
-    # Initialize Spark session with necessary configurations
-    spark = (SparkSession.builder
-             .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkCatalog")
-             .config("spark.sql.catalog.spark_catalog.type", "hive")
-             .config("spark.sql.catalog.spark_catalog.warehouse", "/path/to/warehouse") # Set appropriate warehouse path
-             .config("spark.sql.iceberg.handle-timestamp-without-timezone", str(ignore_timezones).lower())
-             .config("spark.sql.iceberg.use-timestamp-without-timezone-in-new-tables", str(ignore_timezones).lower())
-             .enableHiveSupport()
-             .getOrCreate())
+def convert_to_iceberg(table_name, handle_timestamp=False, delete_backup=False, format_version="2"):
+    # Initialize Spark session builder
+    spark_builder = SparkSession.builder \
+        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkCatalog") \
+        .config("spark.sql.catalog.spark_catalog.type", "hive") \
+        .config("spark.sql.catalog.spark_catalog.warehouse", "/path/to/warehouse") # Set appropriate warehouse path
     
-    # Migrate Hive table to Iceberg
-    print(f"Migrating {table_name} to Iceberg format...")
-    spark.sql(f"CALL spark_catalog.system.migrate('{table_name}', MAP('format-version', '2'))")
+    # Configure handling of timestamps without time zones if specified
+    if handle_timestamp:
+        spark_builder = spark_builder \
+            .config("spark.sql.iceberg.handle-timestamp-without-timezone", "true") \
+            .config("spark.sql.iceberg.use-timestamp-without-timezone-in-new-tables", "true")
+    
+    # Create Spark session
+    spark = spark_builder.enableHiveSupport().getOrCreate()
+    
+    # Migrate Hive table to Iceberg with specified format version
+    print(f"Migrating {table_name} to Iceberg format with version {format_version}...")
+    spark.sql(f"CALL spark_catalog.system.migrate('{table_name}', MAP('format-version', '{format_version}'))")
     
     # Create a backup of the original Hive table
     backup_table = f"{table_name}_BACKUP"
@@ -26,20 +31,22 @@ def convert_to_iceberg(table_name, ignore_timezones=False, delete_backup=False):
         print(f"Deleting backup table: {backup_table}")
         spark.sql(f"DROP TABLE IF EXISTS {backup_table}")
     
-    print(f"Migration of {table_name} completed successfully.")
+    print(f"Migration of {table_name} completed successfully with format version {format_version}.")
 
 if __name__ == "__main__":
     # Argument parser for command-line parameters
     parser = argparse.ArgumentParser(description="Convert Hive table to Iceberg format.")
     parser.add_argument("table_name", type=str, help="Full name of the Hive table (e.g., my_db.my_table)")
-    parser.add_argument("--ignore_timezones", action="store_true", help="Option to ignore timezones in timestamps")
+    parser.add_argument("--handle_timestamp", action="store_true", help="Option to handle timestamps without time zones")
     parser.add_argument("--delete_backup", action="store_true", help="Option to delete the Hive backup table after migration")
-    
+    parser.add_argument("--format_version", type=str, choices=["1", "2"], default="2", help="Iceberg format version to use (1 or 2)")
+
     args = parser.parse_args()
     
     # Execute the conversion with provided arguments
     convert_to_iceberg(
         table_name=args.table_name,
-        ignore_timezones=args.ignore_timezones,
-        delete_backup=args.delete_backup
+        handle_timestamp=args.handle_timestamp,
+        delete_backup=args.delete_backup,
+        format_version=args.format_version
     )
