@@ -1,0 +1,6 @@
+try:
+        print(f"Migrating {table_name} to Iceberg format with version {format_version}...")
+        spark.sql(f"CALL system.migrate('{table_name}', MAP('format-version', '{format_version}'))")
+    except Exception as e:
+        print(f"Error during migration: {e}")
+        return
