@@ -1,0 +1,65 @@
+from pyspark.sql import SparkSession
+import argparse
+
+def convert_to_iceberg(table_name, handle_timestamp=False, format_version="1"):
+    # Initialize Spark session builder
+    spark_builder = SparkSession.builder
+
+    # Configure handling of timestamps without time zones if specified
+    if handle_timestamp:
+        spark_builder = spark_builder \
+            .config("spark.sql.iceberg.handle-timestamp-without-timezone", "true") \
+            .config("spark.sql.iceberg.use-timestamp-without-timezone-in-new-tables", "true")
+    
+    # Create Spark session
+    spark = spark_builder.enableHiveSupport().getOrCreate()
+    
+    # Check if the table is empty
+    try:
+        count = spark.sql(f"SELECT COUNT(*) FROM {table_name}").collect()[0][0]
+        if count == 0:
+            print(f"The table {table_name} is empty. Skipping migration.")
+            return
+    except Exception as e:
+        print(f"Error checking if the table is empty: {e}")
+        return
+
+    # Attempt migration
+    try:
+        print(f"Migrating {table_name} to Iceberg format with version {format_version}...")
+        spark.sql(f"CALL system.migrate('{table_name}', MAP('format-version', '{format_version}'))")
+        print(f"Migration of {table_name} completed successfully with format version {format_version}.")
+    except Exception as e:
+        print(f"Error during migration: {e}")
+        
+        # Attempt to create and migrate a non-partitioned version of the table as a fallback
+        print("Attempting to migrate a non-partitioned version of the table...")
+        
+        try:
+            # Create a non-partitioned copy of the table
+            non_partitioned_table = f"{table_name}_non_partitioned"
+            spark.sql(f"CREATE TABLE {non_partitioned_table} AS SELECT * FROM {table_name}")
+            print(f"Created non-partitioned table {non_partitioned_table} as a fallback.")
+            
+            # Migrate the non-partitioned table
+            spark.sql(f"CALL system.migrate('{non_partitioned_table}', MAP('format-version', '{format_version}'))")
+            print(f"Migration of {non_partitioned_table} completed successfully with format version {format_version}.")
+        
+        except Exception as inner_e:
+            print(f"Error during fallback migration of non-partitioned table: {inner_e}")
+
+if __name__ == "__main__":
+    # Argument parser for command-line parameters
+    parser = argparse.ArgumentParser(description="Convert Hive table to Iceberg format.")
+    parser.add_argument("table_name", type=str, help="Full name of the Hive table (e.g., my_db.my_table)")
+    parser.add_argument("--handle_timestamp", action="store_true", help="Option to handle timestamps without time zones")
+    parser.add_argument("--format_version", type=str, choices=["1", "2"], default="1", help="Iceberg format version to use (1 or 2)")
+
+    args = parser.parse_args()
+    
+    # Execute the conversion with provided arguments
+    convert_to_iceberg(
+        table_name=args.table_name,
+        handle_timestamp=args.handle_timestamp,
+        format_version=args.format_version
+    )
