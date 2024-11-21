@@ -4,3 +4,11 @@ STORED AS ICEBERG
 AS
 SELECT rid, rnum, revtdate, rsym
 FROM smoke_test.t_st2_h;
+
+
+
+CREATE TABLE smoke_test.iceberg_migration30
+PARTITIONED BY (name, age)
+AS
+SELECT name, age
+FROM smoke_test.iceberg_data;
