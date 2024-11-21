@@ -1,0 +1,6 @@
+CREATE TABLE smoke_test.iceberg_migration28
+PARTITIONED BY (revtdate, rsym)
+STORED AS ICEBERG
+AS
+SELECT rid, rnum, revtdate, rsym
+FROM smoke_test.t_st2_h;
