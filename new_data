@@ -1,0 +1,63 @@
+Example for Region North, Year 2024, Month 1:
+sql
+Copy code
+INSERT INTO smoke_test.iceberg_migration200
+VALUES
+(4, 'Headphones', 75.50, 'North', 2024, 1),
+(5, 'Charger', 20.99, 'North', 2024, 1),
+(6, 'Mouse Pad', 15.99, 'North', 2024, 1);
+Example for Region South, Year 2024, Month 2:
+sql
+Copy code
+INSERT INTO smoke_test.iceberg_migration200
+VALUES
+(7, 'Laptop Stand', 55.00, 'South', 2024, 2),
+(8, 'Docking Station', 150.75, 'South', 2024, 2),
+(9, 'External HDD', 75.25, 'South', 2024, 2);
+Adding Data to a New Partition
+First, add the new partition explicitly (if it doesn't already exist):
+
+sql
+Copy code
+ALTER TABLE smoke_test.iceberg_migration200 ADD PARTITION (region='East', year=2024, month=3);
+Insert data into the new partition:
+
+sql
+Copy code
+INSERT INTO smoke_test.iceberg_migration200
+VALUES
+(10, 'Graphics Card', 300.00, 'East', 2024, 3),
+(11, 'Processor', 250.99, 'East', 2024, 3),
+(12, 'RAM', 125.75, 'East', 2024, 3);
+Adding Bulk Data for Multiple Partitions
+If you want to add data for multiple partitions in a single query:
+
+sql
+Copy code
+INSERT INTO smoke_test.iceberg_migration200
+VALUES
+(13, 'Webcam', 50.00, 'North', 2024, 1),
+(14, 'Keyboard', 49.99, 'South', 2024, 2),
+(15, 'SSD', 120.50, 'East', 2024, 3),
+(16, 'Monitor', 200.00, 'East', 2024, 3),
+(17, 'Docking Station', 155.75, 'North', 2024, 1),
+(18, 'External HDD', 70.00, 'South', 2024, 2);
+Verify Data and Partitions
+After inserting the data, you can verify it using the following queries:
+
+List Partitions:
+sql
+Copy code
+SHOW PARTITIONS smoke_test.iceberg_migration200;
+Check Table Data:
+To view all data in the table:
+
+sql
+Copy code
+SELECT * FROM smoke_test.iceberg_migration200;
+To view data for a specific partition (e.g., North, 2024, 1):
+
+sql
+Copy code
+SELECT * FROM smoke_test.iceberg_migration200
+WHERE region='North' AND year=2024 AND month=1;
