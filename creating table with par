@@ -1,0 +1,96 @@
+Scenario: Creating a Sales Data Table with Partitions
+1. Table Structure
+Imagine you want to create a table to store sales data, partitioned by region, year, and month.
+
+Create Table Statement:
+sql
+Copy code
+CREATE TABLE sales_data (
+    sale_id INT,
+    product_name STRING,
+    sale_amount DOUBLE
+)
+PARTITIONED BY (region STRING, year INT, month INT)
+STORED AS PARQUET;
+Explanation:
+Columns:
+sale_id: Unique identifier for each sale.
+product_name: Name of the product sold.
+sale_amount: Total amount of the sale.
+Partitions:
+region: Logical division of data based on region (e.g., North, South).
+year: Year of the sale.
+month: Month of the sale.
+Format:
+STORED AS PARQUET: The data is stored in Parquet format for efficient querying.
+2. Adding Partitions
+After creating the table, you need to add partitions for specific regions, years, and months.
+
+Example Partitions:
+sql
+Copy code
+ALTER TABLE sales_data ADD PARTITION (region='North', year=2024, month=1);
+ALTER TABLE sales_data ADD PARTITION (region='South', year=2024, month=2);
+ALTER TABLE sales_data ADD PARTITION (region='East', year=2024, month=3);
+3. Inserting Data into Partitions
+Once the partitions are added, you can load data into them.
+
+Example Inserts:
+sql
+Copy code
+INSERT INTO sales_data PARTITION (region='North', year=2024, month=1)
+VALUES (1, 'Laptop', 1200.50),
+       (2, 'Mouse', 25.99);
+
+INSERT INTO sales_data PARTITION (region='South', year=2024, month=2)
+VALUES (3, 'Keyboard', 49.99),
+       (4, 'Monitor', 250.75);
+4. Verifying Partitions
+To check if the partitions have been added successfully:
+
+sql
+Copy code
+SHOW PARTITIONS sales_data;
+You should see output similar to:
+
+bash
+Copy code
+region=North/year=2024/month=1
+region=South/year=2024/month=2
+region=East/year=2024/month=3
+5. Querying the Table
+To query specific partitions:
+
+sql
+Copy code
+SELECT * FROM sales_data
+WHERE region='North' AND year=2024 AND month=1;
+This retrieves data only for the specified region and time.
+
+Alternative: Storing Logs with Partitions
+Here’s a different example for managing log data by log_date, app_name, and log_level:
+
+Create Table:
+sql
+Copy code
+CREATE TABLE app_logs (
+    log_id INT,
+    message STRING
+)
+PARTITIONED BY (log_date DATE, app_name STRING, log_level STRING)
+STORED AS TEXTFILE;
+Add Partitions:
+sql
+Copy code
+ALTER TABLE app_logs ADD PARTITION (log_date='2024-11-25', app_name='MyApp', log_level='INFO');
+ALTER TABLE app_logs ADD PARTITION (log_date='2024-11-26', app_name='MyApp', log_level='ERROR');
+Insert Data:
+sql
+Copy code
+INSERT INTO app_logs PARTITION (log_date='2024-11-25', app_name='MyApp', log_level='INFO')
+VALUES (1, 'Service started'),
+       (2, 'Request processed');
+
+INSERT INTO app_logs PARTITION (log_date='2024-11-26', app_name='MyApp', log_level='ERROR')
+VALUES (3, 'Service failed'),
+       (4, 'Database connection timeout')
