@@ -1,0 +1,125 @@
+The uploaded images show a Python script for migrating data from Hive to Apache Iceberg using PySpark. Here’s an explanation of the key sections and lines in the script:
+
+Imports
+
+from pyspark.sql import SparkSession
+import argparse
+import subprocess
+import logging
+from datetime import datetime
+
+	•	pyspark.sql: Used to create a Spark session and interact with Spark DataFrames.
+	•	argparse: Parses command-line arguments to customize script execution.
+	•	subprocess: Allows execution of shell commands from the Python script.
+	•	logging: Handles logging of events for debugging and information.
+	•	datetime: Used to manage timestamps for log files.
+
+Logging Configuration
+
+timestamp = datetime.now().strftime("%Y%m%d%H%M")
+logging.basicConfig(
+    filename=f"/tmp/migration_{timestamp}.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+	•	timestamp: Creates a unique timestamp for log filenames.
+	•	basicConfig: Configures the logging system to write messages to a log file with the specified format.
+
+Function: migrate_table_data
+
+def migrate_table_data(spark, tab_name, format_version):
+    unprocessed_tables = []
+    logging.info(f"Migrating {tab_name} to Iceberg format with version {format_version}...")
+    try:
+        spark.sql(
+            f"CALL spark_catalog.system.migrate('{tab_name}', MAP('format-version', '{format_version}'))"
+        )
+        logging.info(f"Table {tab_name} migrated successfully")
+    except Exception as e:
+        unprocessed_tables.append(tab_name)
+        logging.error(f"Migration failed for table {tab_name}: {e}")
+
+	•	Purpose: Migrates a Hive table (tab_name) to Iceberg format using a specified format_version.
+	•	spark.sql(): Executes a SQL command to perform the migration.
+	•	Error Handling: Logs failed migrations and adds the table name to a list of unprocessed tables.
+
+Function: delete_backup_table_schema
+
+def delete_backup_table_schema(spark, table_name):
+    if table_name.endswith("_backup_"):
+        backup_table = f"{table_name}_backup_"
+        logging.info(f"Dropping table {backup_table}...")
+        try:
+            spark.sql(f"DROP TABLE IF EXISTS {backup_table}")
+        except Exception as e:
+            logging.error(f"Error while executing the drop table: {e}")
+
+	•	Purpose: Drops backup tables with names ending in _backup_.
+	•	spark.sql(): Executes a SQL DROP TABLE command.
+	•	Error Handling: Logs issues encountered while dropping the table.
+
+Function: validate_data_src_tgt
+
+def validate_data_src_tgt(spark, table_name):
+    logging.info(f"Validating the data for {table_name}")
+    try:
+        df1 = spark.read.table(table_name)
+        df2 = spark.read.table(f"{table_name}_backup_")
+        if df1.schema != df2.schema:
+            logging.info("Schema differences detected")
+        diff1 = df1.exceptAll(df2).count()
+        diff2 = df2.exceptAll(df1).count()
+        if diff1 == 0 and diff2 == 0:
+            logging.info("Validation successful")
+        else:
+            logging.info(f"Data differences: Source-to-target = {diff1}, Target-to-source = {diff2}")
+    except Exception as e:
+        logging.error(f"Error during validation: {e}")
+
+	•	Purpose: Validates data by comparing the source table and its backup.
+	•	DataFrame Comparison: Checks schema equality and counts data differences using Spark DataFrame methods like .exceptAll().
+
+Function: convert_to_iceberg
+
+def convert_to_iceberg(table_names, migrate_table=False, validate_data=False, handle_timestamp=False, drop_backup_table=False, format_version="1"):
+    if table_names is None:
+        raise ValueError("Table names cannot be empty.")
+    table_list = table_names.split(",")
+    for tab_name in table_list:
+        if migrate_table:
+            migrate_table_data(spark, tab_name, format_version)
+        if validate_data:
+            validate_data_src_tgt(spark, tab_name)
+        if drop_backup_table:
+            delete_backup_table_schema(spark, tab_name)
+
+	•	Purpose: Manages the entire conversion process for a list of tables, based on flags:
+	•	migrate_table: If True, calls migrate_table_data to migrate tables.
+	•	validate_data: If True, validates data post-migration.
+	•	drop_backup_table: If True, deletes backup tables after validation.
+
+Main Function
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Convert Hive table to Iceberg format.")
+    parser.add_argument("--migrate_table", action="store_true")
+    parser.add_argument("--validate_data", action="store_true")
+    parser.add_argument("--table_names", type=str, required=True)
+    parser.add_argument("--handle_timestamp", action="store_true")
+    parser.add_argument("--drop_backup_table", action="store_true")
+    parser.add_argument("--format_version", type=str, choices=["1", "2"], default="1")
+    args = parser.parse_args()
+    convert_to_iceberg(
+        table_names=args.table_names,
+        migrate_table=args.migrate_table,
+        validate_data=args.validate_data,
+        handle_timestamp=args.handle_timestamp,
+        drop_backup_table=args.drop_backup_table,
+        format_version=args.format_version
+    )
+
+	•	argparse: Defines command-line arguments to control script behavior.
+	•	convert_to_iceberg(): Executes the main functionality based on the parsed arguments.
+
+This script is designed to automate and streamline Hive-to-Iceberg migrations, including data validation and backup cleanup. Let me know if you’d like further details or explanations!
