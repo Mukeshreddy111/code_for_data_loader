@@ -1,0 +1,50 @@
+Here’s another example of a partitioned table with integer columns and some example data.
+
+Table Schema
+
+CREATE TABLE sales_partitioned (
+    order_id INT NOT NULL,
+    sale_amount INT NOT NULL,
+    quantity INT,
+    discount INT
+) PARTITION BY RANGE (sale_amount) (
+    PARTITION low_sales VALUES LESS THAN (100),
+    PARTITION medium_sales VALUES LESS THAN (500),
+    PARTITION high_sales VALUES LESS THAN (1000),
+    PARTITION premium_sales VALUES LESS THAN MAXVALUE
+);
+
+Sample Data for Insertion
+
+order_id	sale_amount	quantity	discount
+1	45	2	5
+2	85	1	10
+3	150	3	20
+4	300	5	15
+5	450	7	25
+6	700	8	30
+7	850	4	35
+8	1100	10	50
+9	1250	6	40
+10	1500	12	60
+
+Insert Statements
+
+INSERT INTO sales_partitioned (order_id, sale_amount, quantity, discount) VALUES
+(1, 45, 2, 5),
+(2, 85, 1, 10),
+(3, 150, 3, 20),
+(4, 300, 5, 15),
+(5, 450, 7, 25),
+(6, 700, 8, 30),
+(7, 850, 4, 35),
+(8, 1100, 10, 50),
+(9, 1250, 6, 40),
+(10, 1500, 12, 60);
+
+Explanation
+
+	•	Partitioning: The table is partitioned based on sale_amount, grouping rows into sales categories (e.g., low, medium, high, premium).
+	•	Values: The data contains an order_id, sale_amount, quantity of items sold, and a discount applied.
+
+This setup is ideal for partitioning large sales data by ranges of amounts for faster querying and maintenance.
