@@ -1,0 +1,86 @@
+Here’s how you can create a partitioned table with a mix of string and integer columns using Spark SQL:
+
+Step 1: Initialize SparkSession
+
+from pyspark.sql import SparkSession
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("PartitionedTableSQL") \
+    .config("spark.sql.catalogImplementation", "hive") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+Step 2: Create a Partitioned Table Using Spark SQL
+
+# Create a table with a mix of integers and strings, partitioned by a string column
+spark.sql("""
+CREATE TABLE sales_partitioned_sql (
+    order_id INT,
+    sale_amount INT,
+    quantity INT,
+    discount INT,
+    customer_name STRING
+)
+PARTITIONED BY (sale_category STRING) -- Partition column
+STORED AS PARQUET
+""")
+
+Step 3: Insert Data into the Partitioned Table
+
+You must use dynamic partitioning or explicitly specify the partition value for each row.
+
+Enable Dynamic Partitioning
+
+# Enable dynamic partitioning
+spark.sql("SET hive.exec.dynamic.partition = true")
+spark.sql("SET hive.exec.dynamic.partition.mode = nonstrict")
+
+Insert Data into the Table
+
+# Insert data into the partitioned table
+spark.sql("""
+INSERT INTO TABLE sales_partitioned_sql PARTITION (sale_category)
+VALUES
+    (1, 45, 2, 5, 'Alice', 'low_sales'),
+    (2, 85, 1, 10, 'Bob', 'low_sales'),
+    (3, 150, 3, 20, 'Charlie', 'medium_sales'),
+    (4, 300, 5, 15, 'David', 'medium_sales'),
+    (5, 450, 7, 25, 'Eve', 'high_sales'),
+    (6, 700, 8, 30, 'Frank', 'high_sales'),
+    (7, 850, 4, 35, 'Grace', 'premium_sales'),
+    (8, 1100, 10, 50, 'Hannah', 'premium_sales'),
+    (9, 1250, 6, 40, 'Ivy', 'luxury_sales'),
+    (10, 1500, 12, 60, 'Jack', 'luxury_sales')
+""")
+
+Step 4: Query the Partitioned Table
+
+You can now query the partitioned table using Spark SQL.
+
+Example Query:
+
+# Query specific partition
+spark.sql("SELECT * FROM sales_partitioned_sql WHERE sale_category = 'medium_sales'").show()
+
+Explanation:
+
+	1.	Table Creation:
+	•	The table sales_partitioned_sql includes integer columns (order_id, sale_amount, quantity, discount) and a string column (customer_name).
+	•	The partition column is sale_category (string).
+	2.	Partitioning:
+	•	Data is partitioned based on the sale_category column, e.g., low_sales, medium_sales.
+	3.	Dynamic Partitioning:
+	•	Dynamic partitioning is enabled to allow inserting data without manually specifying each partition.
+	4.	Storage Format:
+	•	The table is stored in Parquet format for efficiency.
+
+Sample Query Output
+
+If you query SELECT * FROM sales_partitioned_sql WHERE sale_category = 'medium_sales', the result would look like this:
+
+order_id	sale_amount	quantity	discount	customer_name	sale_category
+3	150	3	20	Charlie	medium_sales
+4	300	5	15	David	medium_sales
+
+This is how you can create and manage a partitioned table using Spark SQL. Let me know if you need more details or help!
