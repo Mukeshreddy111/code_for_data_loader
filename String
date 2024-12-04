@@ -1,0 +1,41 @@
+Here is the complete setup where all columns (including partitions) are defined as STRING, and sample data is inserted accordingly:
+
+Table Creation with All Strings (Including Partition)
+
+CREATE TABLE sales_partitioned_strings (
+    order_id STRING,
+    sale_amount STRING,
+    quantity STRING,
+    discount STRING
+)
+PARTITIONED BY (sale_category STRING) -- Partition column as a string
+STORED AS PARQUET;
+
+Insert Data into String Partitions
+
+-- Insert data into partitions (all data and partitions are strings)
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='low_sales') VALUES ('1', '45', '2', '5');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='low_sales') VALUES ('2', '85', '1', '10');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='medium_sales') VALUES ('3', '150', '3', '20');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='medium_sales') VALUES ('4', '300', '5', '15');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='high_sales') VALUES ('5', '450', '7', '25');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='high_sales') VALUES ('6', '700', '8', '30');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='premium_sales') VALUES ('7', '850', '4', '35');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='premium_sales') VALUES ('8', '1100', '10', '50');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='luxury_sales') VALUES ('9', '1250', '6', '40');
+INSERT INTO sales_partitioned_strings PARTITION (sale_category='luxury_sales') VALUES ('10', '1500', '12', '60');
+
+Explanation:
+
+	1.	All Columns as Strings:
+	•	order_id, sale_amount, quantity, discount, and the partition column sale_category are all STRING.
+	2.	Partition as String: The sale_category column, which defines partitions, is also of type STRING.
+	3.	Logical Groups: The sale_category partition groups the data logically (low_sales, medium_sales, etc.).
+
+Example Query
+
+To fetch data for a specific string-based partition:
+
+SELECT * FROM sales_partitioned_strings WHERE sale_category = 'high_sales';
+
+This setup ensures that all data, including the partition column, is treated as strings, adhering to your requirements. Let me know if you need additional help!
