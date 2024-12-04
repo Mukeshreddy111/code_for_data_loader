@@ -1,0 +1,53 @@
+Here’s how to create a table with both string and integer columns and use partitions effectively. The partition column will also be a string.
+
+Table Creation with Mixed Data Types (Strings and Integers)
+
+CREATE TABLE sales_partitioned_mixed (
+    order_id INT,                 -- Integer column
+    sale_amount INT,              -- Integer column
+    quantity INT,                 -- Integer column
+    discount INT,                 -- Integer column
+    customer_name STRING          -- String column
+)
+PARTITIONED BY (sale_category STRING) -- Partition column as a string
+STORED AS PARQUET;
+
+Insert Data into Partitions
+
+Here’s some sample data for inserting into the table:
+
+-- Insert data into partitions (mix of integers and strings)
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='low_sales') VALUES (1, 45, 2, 5, 'Alice');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='low_sales') VALUES (2, 85, 1, 10, 'Bob');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='medium_sales') VALUES (3, 150, 3, 20, 'Charlie');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='medium_sales') VALUES (4, 300, 5, 15, 'David');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='high_sales') VALUES (5, 450, 7, 25, 'Eve');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='high_sales') VALUES (6, 700, 8, 30, 'Frank');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='premium_sales') VALUES (7, 850, 4, 35, 'Grace');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='premium_sales') VALUES (8, 1100, 10, 50, 'Hannah');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='luxury_sales') VALUES (9, 1250, 6, 40, 'Ivy');
+INSERT INTO sales_partitioned_mixed PARTITION (sale_category='luxury_sales') VALUES (10, 1500, 12, 60, 'Jack');
+
+Explanation:
+
+	1.	Columns with Mixed Data Types:
+	•	order_id, sale_amount, quantity, and discount are integers.
+	•	customer_name is a string.
+	2.	Partition Column:
+	•	The sale_category column is a string and defines the partitions, such as low_sales, medium_sales, etc.
+	3.	Logical Data Groups:
+	•	Data is grouped into logical partitions based on the value of sale_category.
+
+Example Query
+
+To query data for a specific partition:
+
+SELECT * FROM sales_partitioned_mixed WHERE sale_category = 'medium_sales';
+
+Sample Output
+
+order_id	sale_amount	quantity	discount	customer_name	sale_category
+3	150	3	20	Charlie	medium_sales
+4	300	5	15	David	medium_sales
+
+This setup creates a flexible table with mixed data types and logical partitions. Let me know if you have more specific requirements!
