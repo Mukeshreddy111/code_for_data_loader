@@ -1,0 +1,12 @@
+from pyspark.sql.functions import col, expr
+
+# Read the Iceberg table into a DataFrame
+df = spark.read.format("iceberg").load("iceberg_migration533")
+
+# Replace invalid UTF-8 characters
+clean_df = df.withColumn(
+    "clean_customer_name", 
+    expr("regexp_replace(customer_name, '[^\\x00-\\x7F]', '')")  # Keep only valid ASCII characters
+)
+
+clean_df.show()
