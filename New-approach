@@ -1,0 +1,84 @@
+Proceeding with Approach A (Promote Binary to UTF-8 during Reads)
+
+This approach involves handling the issue during the read process in Spark by converting Impala’s BINARY type (non-UTF-8 encoded) into UTF-8 strings. The primary goal is to fix the encoding issues without modifying the source files or metadata. Here’s how you can implement this:
+
+Steps to Implement Approach A
+
+1. Identify Binary Columns
+
+	•	Check which columns in the Impala table are causing issues. Typically, these are stored as BINARY but should be treated as UTF-8 STRING.
+	•	Use DESCRIBE in Impala to find the schema of the table:
+
+DESCRIBE iceberg_migration533;
+
+
+
+2. Read the Iceberg Table in Spark
+
+Use Spark to read the Iceberg table into a DataFrame:
+
+df = spark.read.format("iceberg").load("iceberg_migration533")
+
+3. Promote Binary to UTF-8
+
+For columns with the BINARY type, explicitly cast them into STRING during the read. This can be done with PySpark’s pyspark.sql.functions. Below is an example:
+
+from pyspark.sql.functions import col, decode
+
+# Identify binary columns
+binary_columns = ["customer_name", "example_column"]
+
+# Convert binary columns to UTF-8
+for column in binary_columns:
+    df = df.withColumn(column, decode(col(column), "utf-8"))
+
+# Show the resulting DataFrame
+df.show(100)
+
+Explanation:
+	•	decode(col(column), "utf-8"): Converts binary data in the column to a UTF-8 encoded string.
+	•	withColumn: Replaces the column with its UTF-8-decoded version.
+
+4. Validate Data
+
+After decoding, inspect the data to ensure all columns are correctly converted:
+
+df.select(*binary_columns).show(truncate=False)
+
+5. (Optional) Save the Fixed Data
+
+If you need to persist the changes for further use:
+	•	Overwrite the existing Iceberg table:
+
+df.write.format("iceberg").mode("overwrite").save("iceberg_migration533_fixed")
+
+
+	•	Or save to a new table:
+
+df.write.format("iceberg").saveAsTable("iceberg_migration533_fixed")
+
+Benefits of Approach A
+
+	•	Non-destructive: Does not modify the source files or metadata.
+	•	Specific Fix: Targets only the affected columns during the read.
+	•	Efficient: No need to rewrite the entire table, just fix the schema interpretation.
+
+Notes
+
+	1.	Performance Impact:
+	•	The decode() function may add some overhead during the read operation, depending on the table size and number of affected columns.
+	2.	Edge Cases:
+	•	If the binary column contains invalid or corrupt UTF-8 sequences, the decode() function might fail. In such cases, you can use a fallback to handle errors:
+
+from pyspark.sql.functions import when
+
+df = df.withColumn(
+    "customer_name",
+    when(col("customer_name").isNotNull(), decode(col("customer_name"), "utf-8")).otherwise("")
+)
+
+
+	3.	Column Validation:
+Ensure that columns interpreted as BINARY in Impala are indeed UTF-8 encoded data. If not, you may need a custom logic to handle mixed or invalid encodings.
+
+Let me know if you encounter any issues implementing this!
