@@ -1,0 +1,79 @@
+Based on the schema output in your image, the table iceberg_migration533 has the following structure:
+
+Schema:
+
+	•	order_id: Integer (nullable)
+	•	sale_amount: Integer (nullable)
+	•	customer_name: String (nullable)
+	•	sale_date: Date (nullable)
+	•	sale_category: String (nullable)
+
+Observations:
+
+	1.	All fields appear correctly recognized, with customer_name and sale_category as String types.
+	2.	There is no BINARY column, which means the table is expected to handle UTF-8 for String columns (customer_name and sale_category).
+
+Suggested Next Steps:
+
+1. Check Data Integrity
+
+Since the schema is correct, the issue might be with the data in customer_name or sale_category columns containing invalid UTF-8 characters. You can validate this by filtering for non-UTF-8 characters:
+
+from pyspark.sql.functions import expr
+
+# Filter rows with non-UTF-8 characters in customer_name and sale_category
+invalid_rows = df.filter(
+    expr("NOT LENGTH(customer_name) = CHAR_LENGTH(customer_name)") |
+    expr("NOT LENGTH(sale_category) = CHAR_LENGTH(sale_category)")
+)
+
+invalid_rows.show(truncate=False)
+
+	•	If invalid_rows is not empty, these rows contain non-UTF-8 characters.
+
+2. Clean Data During Read
+
+If invalid characters are found, clean them using regexp_replace:
+
+from pyspark.sql.functions import regexp_replace, col
+
+# Clean invalid characters in customer_name and sale_category
+clean_df = df.withColumn(
+    "customer_name", regexp_replace(col("customer_name"), "[^\\x00-\\x7F]", "")
+).withColumn(
+    "sale_category", regexp_replace(col("sale_category"), "[^\\x00-\\x7F]", "")
+)
+
+clean_df.show(100)
+
+	•	This will remove any non-UTF-8 characters from customer_name and sale_category.
+
+3. Save Cleaned Data
+
+If you want to fix this issue permanently, overwrite the Iceberg table with the cleaned data:
+
+clean_df.write.format("iceberg").mode("overwrite").save("iceberg_migration533")
+
+Alternatively, save it as a new table:
+
+clean_df.write.format("iceberg").saveAsTable("iceberg_migration533_cleaned")
+
+4. Handle Configuration Issues
+
+If the issue persists despite cleaning, adjust Spark configurations to avoid strict handling of corrupt data:
+
+spark.conf.set("spark.sql.files.ignoreCorruptFiles", "true")
+
+5. Validate Fixed Data
+
+After cleaning and saving, validate the table by loading it again and checking the data:
+
+validated_df = spark.read.format("iceberg").load("iceberg_migration533_cleaned")
+validated_df.show()
+
+Why This Works:
+
+	•	Cleaning invalid UTF-8 characters ensures compatibility when reading String columns in Spark.
+	•	Overwriting the Iceberg table ensures future reads will not encounter these issues again.
+
+Let me know if you face further challenges!
