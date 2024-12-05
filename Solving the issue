@@ -1,0 +1,19 @@
+from pyspark.sql.functions import encode
+
+# Table name and columns to encode
+table_name = "iceberg_migration533"
+columns_to_encode = ["customer_name", "another_column", "example_column"]
+
+# Read the table into a DataFrame
+dataFrame = spark.sql(f"SELECT * FROM {table_name}")
+
+# Loop through each column and encode it
+for column in columns_to_encode:
+    encoded_column_name = f"encoded_{column}"  # New column name for encoded data
+    dataFrame = dataFrame.withColumn(encoded_column_name, encode(column, "utf-8"))
+
+# Show the updated DataFrame
+dataFrame.show(100)
+
+# Optionally save the updated DataFrame back to a table or file
+# dataFrame.write.mode("overwrite").saveAsTable(f"{table_name}_encoded")
