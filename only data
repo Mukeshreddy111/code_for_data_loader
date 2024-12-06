@@ -1,0 +1,11 @@
+INSERT INTO example_table VALUES
+(1, 'Alice', 'New York', 'Engineer'),
+(2, 'Bob', 'Los Angeles', 'Designer'),
+(3, 'Charlie', 'Chicago', 'Developer'),
+(4, 'Diana', 'Houston', 'Analyst'),
+(5, 'Ethan', 'Phoenix', 'Manager'),
+(6, 'Fiona', 'Philadelphia', 'Scientist'),
+(7, 'George', 'San Antonio', 'Consultant'),
+(8, 'Hannah', 'San Diego', 'Teacher'),
+(9, 'Ivan', 'Dallas', 'Lawyer'),
+(10, 'Jane', 'San Jose', 'Architect');
