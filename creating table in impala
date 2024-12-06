@@ -1,0 +1,48 @@
+Run this SQL command in Hue:
+
+sql
+Copy code
+CREATE TABLE example_table (
+    id INT,
+    name STRING,
+    city STRING,
+    profession STRING
+)
+STORED AS PARQUET;
+This creates a table named example_table with the required structure.
+
+Step 2: Insert Data into the Table
+Use the following INSERT statements to populate the table with at least 10 rows of data:
+
+sql
+Copy code
+INSERT INTO example_table VALUES
+(1, 'Alice', 'New York', 'Engineer'),
+(2, 'Bob', 'Los Angeles', 'Designer'),
+(3, 'Charlie', 'Chicago', 'Developer'),
+(4, 'Diana', 'Houston', 'Analyst'),
+(5, 'Ethan', 'Phoenix', 'Manager'),
+(6, 'Fiona', 'Philadelphia', 'Scientist'),
+(7, 'George', 'San Antonio', 'Consultant'),
+(8, 'Hannah', 'San Diego', 'Teacher'),
+(9, 'Ivan', 'Dallas', 'Lawyer'),
+(10, 'Jane', 'San Jose', 'Architect');
+Step 3: Query the Table
+Verify the data is correctly inserted by querying the table:
+
+sql
+Copy code
+SELECT * FROM example_table;
+This will display the following data:
+
+id	name	city	profession
+1	Alice	New York	Engineer
+2	Bob	Los Angeles	Designer
+3	Charlie	Chicago	Developer
+4	Diana	Houston	Analyst
+5	Ethan	Phoenix	Manager
+6	Fiona	Philadelphia	Scientist
+7	George	San Antonio	Consultant
+8	Hannah	San Diego	Teacher
+9	Ivan	Dallas	Lawyer
+10	Jane	San Jose	Architect
