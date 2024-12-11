@@ -1,0 +1,51 @@
+from pyspark.sql import SparkSession
+
+# Initialize Spark Session with Iceberg catalog
+spark = SparkSession.builder \
+    .appName("Iceberg Migration Automation") \
+    .config("spark.sql.catalog.smoke_test", "org.apache.iceberg.spark.SparkCatalog") \
+    .config("spark.sql.catalog.smoke_test.type", "hadoop") \
+    .config("spark.sql.catalog.smoke_test.warehouse", "hdfs://path/to/warehouse") \
+    .getOrCreate()
+
+# Source table from which schema and partitions are extracted
+source_table = "smoke_test.iceberg_migration200"
+target_table = "smoke_test.iceberg_migration2008"
+
+# Step 1: Get schema of the source table
+schema_df = spark.sql(f"DESCRIBE TABLE {source_table}")
+
+# Collect schema information into a list of column definitions
+columns = schema_df.filter("col_name != '' AND data_type IS NOT NULL") \
+                   .select("col_name", "data_type") \
+                   .rdd.map(lambda row: f"{row.col_name} {row.data_type}").collect()
+
+# Join column definitions to create the schema string
+schema_str = ",\n    ".join(columns)
+
+# Step 2: Get partition information from the source table
+partitions_df = spark.sql(f"DESCRIBE TABLE EXTENDED {source_table}")
+partition_info = partitions_df.filter("col_name == 'Partition Columns'").first()
+partition_columns = partition_info.data_type.replace(" ", "").split(",") if partition_info else []
+
+# Construct partitioning clause
+partition_str = ", ".join(partition_columns)
+partition_clause = f"PARTITIONED BY ({partition_str})" if partition_columns else ""
+
+# Step 3: Generate CREATE TABLE statement dynamically
+create_table_sql = f"""
+CREATE TABLE {target_table} (
+    {schema_str}
+)
+USING iceberg
+{partition_clause}
+"""
+
+# Print the generated SQL for verification
+print("Generated CREATE TABLE Statement:")
+print(create_table_sql)
+
+# Execute the CREATE TABLE statement
+spark.sql(create_table_sql)
+
+print(f"Iceberg table {target_table} created successfully.")
