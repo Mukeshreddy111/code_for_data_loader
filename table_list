@@ -8,3 +8,35 @@ JOIN
     DBS d ON t.DB_ID = d.DB_ID
 WHERE 
     t.OWNER = '<user_name>';
+
+==============================================
+
+from pyspark.sql import SparkSession
+
+# Create SparkSession
+spark = SparkSession.builder \
+    .appName("Hive Metastore Query") \
+    .config("spark.sql.catalogImplementation", "hive") \
+    .getOrCreate()
+
+# Query the metastore to get tables owned by a specific user
+user_name = "<owner_name>"
+database_name = "<database_name>"
+
+query = f"""
+SELECT 
+    t.tbl_name AS table_name, 
+    d.name AS database_name, 
+    t.owner AS owner
+FROM 
+    hive_metastore.tbls t
+JOIN 
+    hive_metastore.dbs d ON t.db_id = d.db_id
+WHERE 
+    t.owner = '{user_name}' 
+    AND d.name = '{database_name}'
+"""
+
+# Run the query and display results
+tables = spark.sql(query)
+tables.show(truncate=False)
