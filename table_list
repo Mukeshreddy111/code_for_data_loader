@@ -73,3 +73,40 @@ for table in tables:
             owner = row["data_type"]
             print(f"Table: {table_name}, Owner: {owner}")
             break
+
+
+===========================================================
+from pyspark.sql import SparkSession
+
+# Create SparkSession with Hive support
+spark = SparkSession.builder \
+    .appName("Filter Tables by Owner") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+# Define the database and owner
+database_name = "your_database_name"  # Replace with your database name
+specific_owner = "desired_owner_name"  # Replace with the specific owner's name
+
+# Switch to the database
+spark.sql(f"USE {database_name}")
+
+# Get a list of all tables in the database
+tables = spark.sql("SHOW TABLES").collect()
+
+# Print header for the output
+print(f"Tables owned by '{specific_owner}' in database: {database_name}")
+print("-------------------------------------------------")
+
+# Iterate over tables and filter by owner
+for table in tables:
+    table_name = table["tableName"]  # Extract table name from row
+    formatted_info = spark.sql(f"DESCRIBE FORMATTED {table_name}").collect()
+    
+    # Find the owner field in the formatted output
+    for row in formatted_info:
+        if "Owner" in row["col_name"]:
+            owner = row["data_type"]
+            if owner == specific_owner:  # Check if the owner matches the desired owner
+                print(f"Table: {table_name}, Owner: {owner}")
+            break
