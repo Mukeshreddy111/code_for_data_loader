@@ -67,3 +67,100 @@ for table in "${TABLE_ARRAY[@]}"; do
 done
 
 echo "In-place Hive-to-Iceberg migration completed successfully!"
+
+
+
+
+$$$$$
+
+
+#!/bin/bash
+
+# Script to trigger Hive-to-Iceberg migration using PySpark
+script_name=$(basename "$0")
+
+# Hardcoded Python migration script path
+pyspark_script="/path/to/iceberg_migration.py"  # Update this to your actual path
+
+function usage() {
+    echo "Usage: $script_name --table-names <table_list> [options]"
+    echo "  Options:"
+    echo "    --migrate-table            Migrate the Hive table to Iceberg format"
+    echo "    --validate                 Validate the data integrity after migration"
+    echo "    --delete-backup-table      Drop any backup tables after migration"
+    echo "    --handle-timestamps        Handle Hive timestamps without timezone"
+    echo "    --format-version <version> Specify the Iceberg format version (default: 2)"
+    exit 1
+}
+
+# Default variables
+migrate_table=false
+validate_data=false
+delete_backup=false
+handle_timestamps=false
+format_version=2  # Default format version
+
+# Parse input arguments
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --table-names) table_names="$2"; shift ;;
+        --migrate-table) migrate_table=true ;;
+        --validate) validate_data=true ;;
+        --delete-backup-table) delete_backup=true ;;
+        --handle-timestamps) handle_timestamps=true ;;
+        --format-version) format_version="$2"; shift ;;
+        *) usage ;;
+    esac
+    shift
+done
+
+# Input validation
+if [[ -z "$table_names" ]]; then
+    usage
+fi
+
+# Spark submit command template
+spark_submit_cmd="spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --executor-memory 8G \
+    --num-executors 4 \
+    --executor-cores 2"
+
+# Split table names
+IFS=',' read -ra TABLE_ARRAY <<< "$table_names"
+
+for table in "${TABLE_ARRAY[@]}"; do
+    echo "Starting migration for table: $table"
+
+    # Construct PySpark command
+    cmd="$spark_submit_cmd $pyspark_script \
+        --table-name $table \
+        --format-version $format_version"
+
+    if [[ "$migrate_table" == true ]]; then
+        cmd+=" --migrate-table"
+    fi
+
+    if [[ "$validate_data" == true ]]; then
+        cmd+=" --validate"
+    fi
+
+    if [[ "$delete_backup" == true ]]; then
+        cmd+=" --delete-backup-table"
+    fi
+
+    if [[ "$handle_timestamps" == true ]]; then
+        cmd+=" --handle-timestamps"
+    fi
+
+    echo "Running command: $cmd"
+    eval "$cmd"
+
+    if [[ $? -ne 0 ]]; then
+        echo "Error during migration for table: $table"
+        exit 1
+    fi
+done
+
+echo "Hive-to-Iceberg migration completed successfully!"
