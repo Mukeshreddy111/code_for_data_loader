@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# Hive-to-Iceberg Migration Script using PySpark
+# Updated with options for migration, validation, backup handling, and Iceberg format version
+
+script_name=$(basename "$0")
+
+# Default variable values
+pyspark_script=""
+table_names=""
+validate_data=false
+delete_backup=false
+handle_timestamps=false
+format_version=2
+migrate_table=false
+cluster_size="large"
+input_path=""
+output_path=""
+
+# Function: Display usage
+function usage() {
+    echo "Usage: $script_name -f <pyspark_script> --table-names <table_list> [options]"
+    echo "Options:"
+    echo "  -f <pyspark_script>            Path to the PySpark migration script"
+    echo "  --table-names <table_list>     Comma-separated list of Hive tables"
+    echo "  --migrate-table                Migrate Hive tables to Iceberg format"
+    echo "  --validate                     Validate data after migration"
+    echo "  --delete-backup-table          Drop backup tables after migration"
+    echo "  --handle-timestamps            Handle Hive timestamps without timezone"
+    echo "  --format-version <version>     Iceberg format version (default: 2)"
+    echo "  --cluster-size <small|large>   Cluster configuration size (default: large)"
+    exit 1
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -f) pyspark_script="$2"; shift ;;
+        --table-names) table_names="$2"; shift ;;
+        --migrate-table) migrate_table=true ;;
+        --validate) validate_data=true ;;
+        --delete-backup-table) delete_backup=true ;;
+        --handle-timestamps) handle_timestamps=true ;;
+        --format-version) format_version="$2"; shift ;;
+        --cluster-size) cluster_size="$2"; shift ;;
+        --input-path) input_path="$2"; shift ;;
+        --output-path) output_path="$2"; shift ;;
+        *) usage ;;
+    esac
+    shift
+done
+
+# Validate required parameters
+if [[ -z "$pyspark_script" || -z "$table_names" ]]; then
+    echo "Error: PySpark script path (-f) and --table-names are required."
+    usage
+fi
+
+# Configure Spark cluster settings based on cluster size
+case "$cluster_size" in
+    small)
+        executor_memory="4G"
+        executor_cores="2"
+        num_executors="2"
+        driver_memory="4G"
+        ;;
+    large)
+        executor_memory="16G"
+        executor_cores="4"
+        num_executors="8"
+        driver_memory="8G"
+        ;;
+    *)
+        echo "Error: Invalid cluster size '$cluster_size'. Use 'small' or 'large'."
+        exit 1
+        ;;
+esac
+
+# Define Spark submit command with cluster configuration
+spark_submit_cmd="spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --executor-memory $executor_memory \
+    --executor-cores $executor_cores \
+    --num-executors $num_executors \
+    --driver-memory $driver_memory"
+
+# Split table names and process each
+IFS=',' read -ra TABLE_ARRAY <<< "$table_names"
+
+for table in "${TABLE_ARRAY[@]}"; do
+    echo "Starting migration for table: $table"
+
+    # Build PySpark command
+    cmd="$spark_submit_cmd $pyspark_script \
+        --table-name $table \
+        --format-version $format_version"
+
+    [[ "$migrate_table" == true ]] && cmd+=" --migrate-table"
+    [[ "$validate_data" == true ]] && cmd+=" --validate"
+    [[ "$delete_backup" == true ]] && cmd+=" --delete-backup-table"
+    [[ "$handle_timestamps" == true ]] && cmd+=" --handle-timestamps"
+
+    [[ -n "$input_path" ]] && cmd+=" --input-path $input_path"
+    [[ -n "$output_path" ]] && cmd+=" --output-path $output_path"
+
+    echo "Running command: $cmd"
+    eval "$cmd"
+
+    # Error handling
+    if [[ $? -ne 0 ]]; then
+        echo "Error occurred while processing table: $table"
+        exit 1
+    fi
+
+    echo "Successfully completed migration for table: $table"
+done
+
+echo "Hive-to-Iceberg migration completed successfully!"
