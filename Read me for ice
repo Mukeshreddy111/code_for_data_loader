@@ -1,0 +1,111 @@
+Here is a README file tailored to your Hive to Iceberg migration project based on the provided code:
+
+Hive to Iceberg Migration Script
+
+This repository contains a Python script designed to migrate Apache Hive tables to Apache Iceberg format using Apache Spark. The script ensures schema validation, data comparison, and incremental conversion for compatibility and performance optimization.
+
+Table of Contents
+	1.	Overview
+	2.	Prerequisites
+	3.	Features
+	4.	Setup
+	5.	Usage
+	6.	Arguments
+	7.	Validation Process
+	8.	Troubleshooting
+	9.	References
+
+Overview
+
+Migrating Hive tables to Iceberg helps achieve:
+	•	Improved performance with metadata management.
+	•	Schema evolution without downtime.
+	•	ACID transactions and better scalability.
+
+The script performs the following tasks:
+	1.	Converts Hive tables to Iceberg format.
+	2.	Compares data consistency between Hive and Iceberg.
+	3.	Validates schemas to ensure no data loss.
+
+Prerequisites
+	•	Python 3.x
+	•	Apache Spark (SparkSQL)
+	•	Iceberg Runtime (Spark integration)
+	•	Access to the Hive Metastore.
+	•	PySpark libraries:
+	•	pyspark.sql
+	•	subprocess
+	•	logging
+
+Ensure Iceberg libraries are configured in Spark.
+
+Features
+	1.	Table Migration: Migrate Hive tables to Iceberg format.
+	2.	Schema Validation: Validate schema and structure between source and target.
+	3.	Data Comparison: Verify row count and ensure consistency.
+	4.	Backup Handling: Drop and recreate backup tables.
+	5.	Automated Execution: Command-line arguments for table-specific migration.
+
+Setup
+	1.	Clone this repository:
+
+git clone <repository-link>
+cd <repository-folder>
+
+
+	2.	Install required dependencies:
+
+pip install pyspark
+
+
+	3.	Update the Spark Configuration with Iceberg support:
+	•	Add the Iceberg JAR to Spark classpath.
+	•	Update spark.sql.catalog settings for Iceberg.
+
+Usage
+
+Run the script using the following command:
+
+python iceberg_migration.py --table_list table1,table2 --format_version 2
+
+Arguments
+
+Argument	Description
+--table_list	Comma-separated list of tables to migrate (e.g., table1,table2).
+--format_version	Iceberg table format version (default: 2).
+--drop_backup_table	Drop backup table after migration (default: False).
+--validate_data	Validate data between Hive and Iceberg tables (default: True).
+--handle_timestamps	Handle timestamps without timezone issues (default: False).
+
+Validation Process
+
+The script performs:
+	1.	Schema Comparison: Ensures schema consistency between Hive and Iceberg.
+	2.	Row Count Validation: Compares row counts to ensure data is migrated successfully.
+	3.	Backup Table Management: Backup old tables during migration.
+
+Sample Logs:
+	•	Success:
+
+Schema validation completed with status: True
+Data comparison matched. Row counts are identical.
+
+
+	•	Error:
+
+ERROR: Validation failed due to row count mismatch.
+
+Troubleshooting
+	1.	Spark Session Error: Ensure Iceberg JAR files are correctly loaded in Spark.
+	2.	Schema Mismatch: Check table definitions in Hive before migration.
+	3.	Timestamp Issues: Use --handle_timestamps to resolve timestamp mismatches.
+
+References
+	•	Apache Iceberg Documentation
+	•	Apache Spark Documentation
+	•	Hive to Iceberg Migration Guide
+
+Author: [Your Name]
+Contact: [Your Email]
+
+Feel free to replace placeholders such as <repository-link> and author details with actual values.
