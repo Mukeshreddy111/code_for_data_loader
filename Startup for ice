@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Script to trigger in-place Hive-to-Iceberg migration using PySpark
+script_name=$(basename "$0")
+
+function usage() {
+    echo "Usage: $script_name -i <hive_database> -t <table_list> [-v] [-d]"
+    echo "  -i    Hive database name (required)"
+    echo "  -t    Table list (comma-separated) to migrate (required)"
+    echo "  -v    Enable validation after migration"
+    echo "  -d    Dry run mode (show commands without execution)"
+    exit 1
+}
+
+# Default variables
+validation=false
+dry_run=0
+
+# Parse input arguments
+while getopts "i:t:vd" option; do
+    case "$option" in
+        i) hive_db="$OPTARG" ;;   # Source and target database (same)
+        t) tables="$OPTARG" ;;    # List of tables to migrate
+        v) validation=true ;;     # Enable validation flag
+        d) dry_run=1 ;;           # Dry run mode
+        *) usage ;;
+    esac
+done
+
+# Input validation
+if [[ -z "$hive_db" || -z "$tables" ]]; then
+    usage
+fi
+
+# Spark submit command template
+spark_submit_cmd="spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --executor-memory 8G \
+    --num-executors 4 \
+    --executor-cores 2"
+
+# PySpark Migration Script Path
+migration_script="iceberg_migration.py"
+
+# Split tables and start migration
+IFS=',' read -ra TABLE_ARRAY <<< "$tables"
+
+for table in "${TABLE_ARRAY[@]}"; do
+    echo "Starting in-place migration for table: $table in database: $hive_db"
+    cmd="$spark_submit_cmd $migration_script \
+        --source-db $hive_db \
+        --table-name $table \
+        --target-db $hive_db \
+        --validate $validation"
+
+    if [[ $dry_run -eq 1 ]]; then
+        echo "[Dry Run] $cmd"
+    else
+        echo "Running migration for $table..."
+        eval "$cmd"
+        if [[ $? -ne 0 ]]; then
+            echo "Error during migration of table: $table"
+            exit 1
+        fi
+    fi
+done
+
+echo "In-place Hive-to-Iceberg migration completed successfully!"
