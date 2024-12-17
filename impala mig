@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Prompt user for the source table name
+echo -n "Enter the source table name: "
+read source_table
+
+# Validate input
+if [ -z "$source_table" ]; then
+  echo "Table name cannot be empty."
+  exit 1
+fi
+
+# Define the new table name
+new_table="${source_table}_new_"
+
+# Impala shell CTAS statement with parquet_annotate_strings_utf8 property
+impala-shell -i impala_host:21000 -q "
+CREATE TABLE $new_table
+STORED AS ICEBERG
+TBLPROPERTIES (
+    'format-version' = '2',
+    'parquet.annotate-strings-utf8' = 'true',
+    'parquet_annotate_strings_utf8' = 'true'
+) AS
+SELECT *
+FROM $source_table;
+"
+
+# Check success
+if [ $? -eq 0 ]; then
+  echo "Table $new_table created successfully with data from $source_table."
+else
+  echo "Failed to create the new table."
+fi
