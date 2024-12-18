@@ -53,3 +53,12 @@ else
     echo "Failed to create the new table."
     exit 1
 fi
+
+
+
+
+$$$&&&
+
+# Extract partition columns dynamically
+partition_columns=$(echo "$create_table_output" | awk '/PARTITIONED BY/ {flag=1; next} /STORED AS/ {flag=0} flag' | \
+tr -d '(),\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/[[:space:]]\+/ /g')
