@@ -1,0 +1,119 @@
+Here’s an improved and polished version of your documentation for Hive to Iceberg migration, incorporating all the feedback:
+
+Hive to Iceberg Migration Guide
+
+This guide outlines the process of migrating data from Hive to Iceberg, leveraging Iceberg’s advanced partitioning, query performance, and schema evolution capabilities.
+
+Introduction
+
+What is Iceberg?
+
+Apache Iceberg is an open table format for large-scale analytic datasets. It supports high-performance, ACID-compliant, and schema evolution, making it a great choice for modern data pipelines.
+
+Why Migrate from Hive to Iceberg?
+	•	Enhanced performance for high-cardinality data through advanced partitioning.
+	•	Support for schema evolution and versioning.
+	•	Optimized for large datasets with features like snapshot isolation.
+
+Steps for Migration
+
+Step 1: Create the Iceberg Table
+
+Start by creating an Iceberg table with the desired schema and partitioning. You can partition by specific columns or use bucket-based partitioning for high-cardinality columns.
+
+Example: Partition by Specific Columns
+
+CREATE TABLE smoke_test.iceberg_migration0112xm (
+    sale_id INT,
+    product_name STRING,
+    sale_amount DOUBLE
+)
+PARTITIONED BY (region STRING, year INT, month INT)
+STORED AS ICEBERG
+TBLPROPERTIES ('format-version' = '2');
+
+Explanation:
+	•	PARTITIONED BY ensures the table is partitioned by specified columns.
+	•	TBLPROPERTIES ('format-version' = '2') sets the Iceberg table format to version 2, enabling advanced features.
+
+Step 2: Migrate Data
+
+Insert data into the newly created Iceberg table by copying it from the source Hive table.
+
+INSERT INTO smoke_test.iceberg_migration0112xm 
+SELECT 
+    sale_id, 
+    product_name, 
+    sale_amount, 
+    region, 
+    year, 
+    month 
+FROM smoke_test.iceberg_migration001;
+
+Note: Replace smoke_test.iceberg_migration001 with your source Hive table.
+
+Step 3: Validate the Data
+
+After inserting data into the Iceberg table, validate it by querying the table and checking its properties.
+
+Query Data
+
+SELECT * FROM smoke_test.iceberg_migration0112xm;
+
+Check Table Properties
+
+DESCRIBE FORMATTED smoke_test.iceberg_migration0112xm;
+
+Ensure the output matches your expectations for schema, partitioning, and data integrity.
+
+Step 4: Use Bucket-Based Partitioning (Optional)
+
+For columns with high cardinality, use bucket partitioning to improve performance by reducing small files and optimizing joins.
+
+CREATE TABLE smoke_test.iceberg_migration0112xm (
+    sale_id INT,
+    product_name STRING,
+    sale_amount DOUBLE
+)
+PARTITIONED BY (BUCKET(4, region), year, month)
+STORED AS ICEBERG
+TBLPROPERTIES ('format-version' = '2');
+
+Explanation:
+	•	BUCKET(4, region) hashes the column region into 4 buckets, optimizing for high-cardinality data.
+
+Insert data into this bucketed table similarly as before.
+
+Step 5: Handle Schema Evolution
+
+Iceberg supports schema evolution. If the source Hive table changes, you can modify the Iceberg table schema without breaking downstream queries.
+
+Add a New Column
+
+ALTER TABLE smoke_test.iceberg_migration0112xm 
+ADD COLUMNS (new_column_name STRING);
+
+Drop a Column
+
+ALTER TABLE smoke_test.iceberg_migration0112xm 
+DROP COLUMN column_name;
+
+Error Handling
+
+Common Issues and Solutions
+	1.	Schema Mismatch: Ensure the source Hive table and target Iceberg table schemas match.
+	•	Solution: Use DESCRIBE to verify schemas before migration.
+	2.	Partition Misalignment: Partitions in Hive may not map directly to Iceberg.
+	•	Solution: Explicitly define partitions in the Iceberg table.
+	3.	Duplicate Data: Inserts may cause duplicate entries.
+	•	Solution: Use deduplication logic during the INSERT operation.
+	4.	Large File Sizes: Iceberg performs best with optimized file sizes.
+	•	Solution: Use compaction utilities to manage file sizes post-migration.
+
+Conclusion
+
+This guide demonstrates how to migrate from Hive to Iceberg while ensuring data consistency and leveraging Iceberg’s advanced features. By following these steps, you can improve query performance, simplify schema management, and future-proof your data pipeline.
+
+For additional questions or troubleshooting, refer to the Apache Iceberg documentation.
+
+This version includes structured steps, explanations, and troubleshooting to make it comprehensive and user-friendly. Let me know if you’d like any further refinements!
