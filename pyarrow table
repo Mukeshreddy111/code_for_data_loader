@@ -1,0 +1,151 @@
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+# Step 1: Create data as a Python dictionary
+data = {
+    "column1": [1, 2, 3, 4, 5],
+    "column2": ["a", "b", "c", "d", "e"],
+    "column3": [True, False, True, False, True]
+}
+
+# Step 2: Convert dictionary to a PyArrow Table
+table = pa.Table.from_pydict(data)
+
+# Step 3: Write the table to a Parquet file
+output_file = "example.parquet"
+pq.write_table(table, output_file)
+
+print(f"Parquet file '{output_file}' has been created successfully!")
+
+
+-----------------------------------------------------------------------------------
+
+Create Parquet Files with PyArrow
+
+Use PyArrow to write data into Parquet format:
+python
+Copy code
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+# Example data
+data = pa.Table.from_pydict({'column1': [1, 2, 3], 'column2': ['a', 'b', 'c']})
+pq.write_table(data, 'output_file.parquet')
+Create a Hive Table and Load Files
+
+Create a Hive table:
+sql
+Copy code
+CREATE TABLE hive_table_name (
+  column1 INT,
+  column2 STRING
+)
+STORED AS PARQUET;
+Load the Parquet file into the Hive table using Impala:
+sql
+Copy code
+LOAD DATA INPATH 'hdfs_path_to_file.parquet' INTO TABLE hive_table_name;
+Migrate the Hive Table with Spark Procedures
+
+Use Spark to read the Hive table:
+python
+Copy code
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Migrate Hive to Iceberg") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+hive_df = spark.sql("SELECT * FROM hive_table_name")
+hive_df.write.format("iceberg").save("iceberg_table_name")
+Validate Table with Spark and Impala
+
+Validate with Spark:
+python
+Copy code
+iceberg_df = spark.read.format("iceberg").load("iceberg_table_name")
+iceberg_df.show()
+Validate with Impala by querying the table.
+Case 2: Iceberg Table with Spark and Impala
+Create Parquet Files with PyArrow
+
+Similar to Step 1 in Case 1.
+Create an Iceberg Table
+
+Create the Iceberg table:
+sql
+Copy code
+CREATE TABLE iceberg_table_name (
+  column1 INT,
+  column2 STRING
+)
+STORED AS ICEBERG;
+Load data using Spark:
+python
+Copy code
+df = spark.read.parquet('output_file.parquet')
+df.write.format("iceberg").save("iceberg_table_name")
+Validate Table with Spark and Impala
+
+Validate using the same process as in Step 4 of Case 1.
+If you need further assistance with a specific step, let me know!
+
+
+
+
+
+
+You said:
+How to create parquet file using pyarrow
+ChatGPT said:
+ChatGPT
+To create a Parquet file using PyArrow, you need to use the pyarrow.Table and pyarrow.parquet modules. Below is a step-by-step guide with code examples:
+
+Steps to Create Parquet File
+Install PyArrow: Ensure you have PyArrow installed:
+
+bash
+Copy code
+pip install pyarrow
+Create a Table in PyArrow: Use the Table.from_pydict method to create a PyArrow table from a Python dictionary.
+
+Write the Table to a Parquet File: Use pyarrow.parquet.write_table to save the table as a Parquet file.
+
+Example Code
+python
+Copy code
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+# Step 1: Create data as a Python dictionary
+data = {
+    "column1": [1, 2, 3, 4, 5],
+    "column2": ["a", "b", "c", "d", "e"],
+    "column3": [True, False, True, False, True]
+}
+
+# Step 2: Convert dictionary to a PyArrow Table
+table = pa.Table.from_pydict(data)
+
+# Step 3: Write the table to a Parquet file
+output_file = "example.parquet"
+pq.write_table(table, output_file)
+
+print(f"Parquet file '{output_file}' has been created successfully!")
+Customizations
+Specify Compression: Use compression='snappy' (default), 'gzip', or 'brotli' for compressed files:
+
+python
+Copy code
+pq.write_table(table, output_file, compression='snappy')
+Partitioning Data: If you're working with large datasets, you can partition the data by columns (requires PyArrow Datasets).
+
+Reading the Parquet File
+To verify the file was created, you can read it back using PyArrow:
+
+python
+Copy code
+# Read the Parquet file
+read_table = pq.read_table(output_file)
+print(read_table.to_pandas())
