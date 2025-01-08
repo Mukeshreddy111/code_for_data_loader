@@ -1,0 +1,125 @@
+Based on the images you provided, I’ll draft a procedural document for migrating a Hive table to Iceberg.
+
+Procedure for Migrating Hive Tables to Iceberg Format
+
+This document outlines the steps to migrate a Hive table to the Iceberg table format to optimize storage and improve query performance.
+
+1. Prerequisites
+	•	Access to Impala Shell and Hive databases.
+	•	Necessary privileges to create and alter tables.
+	•	Iceberg libraries configured in your environment.
+	•	Familiarity with the table schema and partitioning.
+
+2. Steps to Migrate
+
+Step 1: Enter the Impala Shell
+	1.	Open the terminal and run:
+
+impala-shell -i <host:port> --ssl -B
+
+Replace <host:port> with your Impala host and port.
+
+	2.	Change the database to the desired one:
+
+use <database_name>;
+
+Step 2: Generate the Table Definition in Iceberg
+	1.	Use the SHOW CREATE TABLE command in Hive or Impala to fetch the existing Hive table’s schema:
+
+SHOW CREATE TABLE <table_name>;
+
+
+	2.	Note the schema and partitions. Example output:
+
+CREATE EXTERNAL TABLE `<table_name>` (
+    column1 STRING,
+    column2 INT,
+    column3 DOUBLE
+)
+PARTITIONED BY (
+    year INT,
+    month INT
+)
+STORED AS PARQUET;
+
+Step 3: Create an Iceberg Table
+
+Modify the above schema for Iceberg by:
+	1.	Updating the table name:
+
+CREATE TABLE smoke_test.iceberg_migration0112xx (
+    sale_id INT NOT NULL,
+    product_name STRING,
+    sale_amount DOUBLE,
+    date_column TIMESTAMP,
+    region STRING
+)
+PARTITIONED BY SPEC (
+    region,
+    month(date_column)
+)
+STORED AS ICEBERG
+TBLPROPERTIES (
+    'format-version'='2',
+    'write.merge.mode'='merge-on-read'
+);
+
+
+	2.	Partitioning: Use the PARTITIONED BY SPEC clause to specify partitions. Iceberg supports time-based and column-based partitioning.
+	3.	File Format: Set STORED AS ICEBERG and configure properties:
+
+TBLPROPERTIES (
+    'write.delete.mode'='merge-on-read',
+    'write.format.default'='parquet'
+);
+
+Step 4: Insert Data into the Iceberg Table
+
+Copy data from the Hive table to the new Iceberg table:
+
+INSERT INTO TABLE smoke_test.iceberg_migration0112xx
+SELECT column1, column2, column3, CURRENT_TIMESTAMP(), column4
+FROM hive_table_name;
+
+Step 5: Verify the Data
+	1.	Run validation scripts or queries in Python or SQL to ensure data integrity.
+	2.	Use tools like Impala or Spark to validate the Iceberg table’s functionality:
+
+SELECT COUNT(*), MAX(date_column), MIN(date_column)
+FROM smoke_test.iceberg_migration0112xx;
+
+Step 6: Enhance Query Performance
+	1.	Bucketing:
+	•	Use bucketing to optimize frequent join columns:
+
+CREATE TABLE smoke_test.iceberg_migration_buckets (
+    sale_id INT,
+    product_name STRING,
+    sale_amount DOUBLE,
+    region STRING
+)
+PARTITIONED BY SPEC (
+    bucket(4, sale_id),
+    region,
+    month(date_column)
+)
+STORED AS ICEBERG;
+
+
+	2.	Validate bucketed data with queries and metrics.
+
+3. Additional Notes
+	•	File Format: Ensure to replace Hive-specific file formats like Parquet or ORC with STORED AS ICEBERG.
+	•	Partitioning:
+	•	Iceberg handles time-based partitions (e.g., month(date_column)).
+	•	Explicit partition columns must align with Iceberg’s requirements.
+
+4. Summary
+
+Migrating from Hive to Iceberg involves:
+	1.	Extracting the schema from the Hive table.
+	2.	Modifying the schema to create a new Iceberg table.
+	3.	Inserting data from Hive to Iceberg.
+	4.	Validating the data in Iceberg for accuracy.
+
+Let me know if you need further assistance with customization or automation scripts for this process.
