@@ -1,0 +1,5 @@
+CREATE TABLE test_colin.iceberg_atlas_test_new (
+    test STRING
+)
+STORED BY 'org.apache.iceberg.mr.hive.HiveIcebergStorageHandler'
+TBLPROPERTIES ('iceberg.catalog'='hadoop', 'format-version'='1');
