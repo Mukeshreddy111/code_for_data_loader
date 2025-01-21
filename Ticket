@@ -1,0 +1,115 @@
+Here’s the updated and expanded version of your support case, including additional details that could help Cloudera troubleshoot the issue more effectively:
+
+Subject: Request for Assistance: Unable to Use Historical Metadata When Migrating Iceberg Tables from HDFS to Ozone
+
+Description:
+
+Dear Cloudera Support Team,
+
+We are facing an issue during the migration of Iceberg tables from HDFS to Ozone where the historical metadata becomes inaccessible or unusable post-migration. This is impacting our ability to query historical table versions and maintain data lineage, which are critical for our operations. Below are the comprehensive details of the issue:
+
+1. Issue Summary:
+	•	Description:
+	•	We are migrating Iceberg tables from HDFS to Ozone using [specific tool or process, e.g., Iceberg APIs or a custom migration script].
+	•	While the data files are successfully moved, the historical metadata (e.g., snapshot information) is either corrupted, lost, or incompatible in the Ozone environment.
+	•	Queries that rely on historical versions of the tables fail, even though the latest table state appears intact.
+	•	Observed Behavior:
+	•	Accessing historical metadata results in errors such as: [Provide specific errors, e.g., “Metadata file not found” or “Snapshot version not recognized”].
+	•	Queries involving rollback or time-travel functionality are not returning the expected results.
+	•	Expected Behavior:
+	•	Historical metadata should remain consistent and usable after the migration, enabling versioned queries and rollback functionality.
+	•	Affected Services/Components:
+	•	Iceberg table metadata
+	•	Ozone storage integration with Iceberg metadata
+	•	Possibly Hive/Presto/Spark integrations for querying Iceberg tables
+	•	Start Time:
+	•	[Provide the date/time when the issue was first observed, e.g., after completing the migration or during initial testing.]
+	•	Current Impact:
+	•	Severity: High
+	•	Business Impact:
+	•	Historical queries (e.g., rollback or snapshot-based queries) are critical for compliance and audit requirements.
+	•	Downstream processes relying on versioned data are disrupted.
+	•	Data lineage tracking and recovery processes are compromised.
+
+2. Environment Details:
+	•	Cloudera Distribution Version: [e.g., CDP 7.x.x or CDH version.]
+	•	Iceberg Version: [Provide the specific version, if known.]
+	•	Ozone Version and Configuration:
+	•	Version: [e.g., 1.x.x]
+	•	Bucket Type: [e.g., FS Optimized or Key Optimized]
+	•	Replication Policy: [e.g., 3x replication or erasure coding]
+	•	Cluster Configuration:
+	•	HDFS: [Number of nodes, replication factor, etc.]
+	•	Ozone: [Number of nodes, bucket configurations, etc.]
+	•	Compute Layer: [Spark, Hive, Presto, etc., along with versions and configurations.]
+	•	Operating System: [e.g., CentOS 7.9, Ubuntu 20.04]
+	•	Storage Layout Details:
+	•	Original HDFS Layout: [e.g., Directory structure for tables and metadata.]
+	•	Ozone Layout: [How data and metadata are being stored in Ozone buckets.]
+
+3. Steps to Reproduce:
+	1.	Create Iceberg tables in HDFS with multiple snapshots (historical metadata).
+	2.	Migrate tables from HDFS to Ozone using [specific method/tool, e.g., Iceberg table rewrite, Ozone distcp, or custom migration script].
+	3.	Load the migrated tables in the Ozone environment using [query engine/tool].
+	4.	Attempt to query historical snapshots or perform rollback operations.
+	5.	Observe errors or missing metadata issues.
+
+4. Logs and Diagnostics:
+	•	Relevant Logs:
+	•	Ozone service logs during migration and table access ([Attach specific logs or highlight error snippets]).
+	•	Iceberg logs, if available ([Provide relevant debug/trace outputs]).
+	•	Query engine logs (e.g., Hive/Presto/Spark logs showing errors when accessing historical metadata).
+	•	Error Messages:
+	•	[Include exact error messages or stack traces, e.g., “Error: Metadata snapshot file not found” or “Invalid snapshot ID.”]
+	•	Diagnostic Commands:
+	•	Ran Iceberg metadata inspection commands, e.g., SHOW SNAPSHOTS; - [State results, if any.]
+	•	Validated Ozone bucket contents to confirm metadata files were migrated successfully.
+
+5. Troubleshooting Efforts:
+	•	Pre-Migration Validation:
+	•	Verified historical metadata consistency in HDFS using Iceberg commands and queries.
+	•	Ensured Iceberg snapshot structure was intact before migration.
+	•	Migration Steps:
+	•	Used [specific tool/method] to copy data and metadata from HDFS to Ozone.
+	•	Ensured data files and metadata files were copied without errors.
+	•	Post-Migration Checks:
+	•	Confirmed that data files were present in Ozone.
+	•	Verified Iceberg table registration in Ozone using [query engine/tool].
+	•	Attempted to rebuild metadata, but historical metadata remained inaccessible.
+
+6. Potential Root Causes (Suspicions):
+	•	Metadata file structure differences between HDFS and Ozone causing incompatibility.
+	•	Changes in Ozone bucket layout or permissions impacting metadata access.
+	•	Iceberg’s reliance on absolute paths for metadata references, which may not align with Ozone’s storage model.
+	•	Potential bugs or limitations in Iceberg-Ozone integration.
+
+7. Urgency and Business Impact:
+	•	Urgency Level: High
+	•	Business Impact:
+	•	Compliance Risk: Historical data queries are required for audits and compliance reports.
+	•	Workflow Disruption: ETL processes and downstream analytics relying on time-travel capabilities are failing.
+	•	Data Recovery Challenges: The inability to access historical metadata increases risks of data recovery failures.
+
+8. Additional Information:
+	•	Related Environment Changes:
+	•	Recent upgrades to [versions of Cloudera, Ozone, or Iceberg, if applicable].
+	•	Modifications to storage policies during migration.
+	•	References:
+	•	Iceberg Documentation: [Include links to relevant Iceberg/Ozone integration documentation.]
+	•	Previous Support Tickets: [Mention any related issues/tickets, if applicable.]
+
+We request your guidance on resolving this issue. Specifically, we would like:
+	1.	Confirmation of best practices for migrating Iceberg tables from HDFS to Ozone.
+	2.	Assistance in diagnosing and resolving the metadata compatibility issue.
+	3.	Any recommendations or workarounds to restore historical metadata functionality.
+
+Please let us know if additional details or access to the environment are required.
+
+Thank you for your assistance!
+
+Best regards,
+[Your Name]
+[Your Contact Information]
+[Your Organization Name]
+
+This version adds more context about possible root causes, detailed environment configurations, and troubleshooting steps. Let me know if you’d like further refinements!
