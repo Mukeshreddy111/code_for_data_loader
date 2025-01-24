@@ -1,0 +1,59 @@
+Here’s an example of creating a larger Iceberg table with more columns and inserting more comprehensive data using Impala:
+
+Step 1: Create a Bigger Iceberg Table
+
+This table has more columns and is partitioned by event_date.
+
+CREATE TABLE my_database.big_iceberg_table (
+    id INT,
+    name STRING,
+    category STRING,
+    subcategory STRING,
+    location STRING,
+    amount DOUBLE,
+    currency STRING,
+    event_date DATE,
+    created_at TIMESTAMP
+)
+PARTITIONED BY (event_date)
+STORED AS ICEBERG;
+
+Step 2: Insert Larger Data
+
+You can use a bulk INSERT INTO statement to populate the table with larger and more varied data:
+
+INSERT INTO my_database.big_iceberg_table VALUES
+(1, 'Alice', 'Electronics', 'Mobile', 'New York', 1200.50, 'USD', '2025-01-01', '2025-01-01 10:00:00'),
+(2, 'Bob', 'Electronics', 'Laptop', 'San Francisco', 2500.00, 'USD', '2025-01-02', '2025-01-02 11:30:00'),
+(3, 'Charlie', 'Fashion', 'Shoes', 'Los Angeles', 300.75, 'USD', '2025-01-01', '2025-01-01 14:20:00'),
+(4, 'Diana', 'Home', 'Furniture', 'Seattle', 1500.00, 'USD', '2025-01-03', '2025-01-03 09:10:00'),
+(5, 'Eve', 'Automotive', 'Car', 'Austin', 25000.99, 'USD', '2025-01-02', '2025-01-02 16:40:00'),
+(6, 'Frank', 'Electronics', 'Tablet', 'Boston', 600.25, 'USD', '2025-01-03', '2025-01-03 12:15:00'),
+(7, 'Grace', 'Fashion', 'Bag', 'Chicago', 120.00, 'USD', '2025-01-01', '2025-01-01 18:05:00'),
+(8, 'Hank', 'Home', 'Appliance', 'Miami', 400.50, 'USD', '2025-01-04', '2025-01-04 10:45:00'),
+(9, 'Ivy', 'Sports', 'Bicycle', 'Denver', 800.00, 'USD', '2025-01-02', '2025-01-02 20:30:00'),
+(10, 'Jake', 'Travel', 'Flight', 'Phoenix', 1200.75, 'USD', '2025-01-03', '2025-01-03 08:00:00');
+
+Step 3: Query the Table
+
+Once the data is inserted, you can query the table with filtering, aggregation, or partition pruning:
+
+Fetch All Data
+
+SELECT * FROM my_database.big_iceberg_table;
+
+Query Based on Partition
+
+SELECT * FROM my_database.big_iceberg_table WHERE event_date = '2025-01-02';
+
+Aggregation Query
+
+SELECT location, SUM(amount) as total_sales
+FROM my_database.big_iceberg_table
+GROUP BY location;
+
+Notes:
+	1.	Scaling the Data Further: If you need even more data, you can write a script or use a tool like Spark or Python to generate synthetic data with similar fields.
+	2.	Insert Limitations in Impala: If Impala doesn’t allow direct inserts, you can generate the data externally (e.g., in CSV format) and load it into the Iceberg table using LOAD DATA or a supported Spark-based mechanism.
+
+Would you like me to guide you on generating synthetic data or loading it in bulk?
