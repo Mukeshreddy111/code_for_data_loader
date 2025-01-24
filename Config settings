@@ -1,0 +1,62 @@
+The error indicates that your Hadoop setup is unable to locate certain configuration files related to metrics:
+	•	hadoop-metrics2-xceiverclientmetrics.properties
+	•	hadoop-metrics2.properties
+
+These configuration files are typically used to configure Hadoop’s metrics system (for monitoring and diagnostics). Here’s how you can troubleshoot and resolve this issue:
+
+1. Verify the Configuration Directory
+	•	Check if the directory containing the Hadoop configuration files (e.g., $HADOOP_CONF_DIR) is correctly set in your environment.
+	•	Run:
+
+echo $HADOOP_CONF_DIR
+
+This should point to the directory where all configuration files (core-site.xml, hdfs-site.xml, etc.) are stored. If not, export it:
+
+export HADOOP_CONF_DIR=/path/to/hadoop/conf
+
+Add this to your ~/.bashrc or ~/.zshrc to persist it.
+
+2. Check the Metrics Files
+	•	Ensure the required metrics configuration files (hadoop-metrics2-xceiverclientmetrics.properties and hadoop-metrics2.properties) exist in the configuration directory:
+
+ls $HADOOP_CONF_DIR
+
+
+	•	If these files are missing, you can create or copy them.
+
+Example: hadoop-metrics2.properties
+
+Here is a basic example of hadoop-metrics2.properties:
+
+*.period=10
+*.sink.file.class=org.apache.hadoop.metrics2.sink.FileSink
+*.sink.file.filename=/tmp/hadoop-metrics.out
+
+Example: hadoop-metrics2-xceiverclientmetrics.properties
+
+This file might not always be present but can often inherit configurations from hadoop-metrics2.properties.
+
+3. Permissions
+	•	Ensure the Hadoop configuration directory and files have appropriate permissions for the user running Hadoop:
+
+chmod -R 755 $HADOOP_CONF_DIR
+
+4. Review Logs
+	•	Check Hadoop logs for more specific information about the missing configuration or paths it’s trying to resolve. Look in:
+	•	$HADOOP_HOME/logs
+	•	Application logs (e.g., yarn, namenode, etc.).
+
+5. Metrics System Not Needed?
+
+If you are not using the metrics system, you can disable the warnings by either:
+	•	Creating empty placeholder files for hadoop-metrics2-xceiverclientmetrics.properties and hadoop-metrics2.properties.
+	•	Configuring your log4j.properties or log4j2.properties to suppress these warnings.
+
+6. Documentation or Templates
+	•	Check Hadoop’s documentation or the conf directory in your Hadoop installation for sample files:
+
+find $HADOOP_HOME -name "*.properties"
+
+
+
+If you still face issues, let me know the exact error logs or your Hadoop version, and I can assist further!
