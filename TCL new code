@@ -1,0 +1,201 @@
+I’ll now explain the TCS Entitlements script line by line in a structured manner. This will help you understand what each section does and how the components work together.
+
+1. Importing Required Libraries
+
+At the beginning of the script, we import all the necessary Python libraries:
+
+#!/usr/bin/env python3
+import collections.abc
+import hashlib
+import logging
+import argparse
+import json
+import os
+import sys
+import re
+import requests
+import urllib3
+import ldap3
+import pandas as pd
+from functools import lru_cache
+from typing import List, Dict, Tuple, Optional, Any, Set
+from impala.dbapi import connect
+
+What this does:
+	•	Loads modules for:
+	•	Logging (logging)
+	•	Working with JSON (json)
+	•	Handling system arguments (argparse)
+	•	Network requests (requests)
+	•	Database connections (impala.dbapi.connect)
+	•	LDAP (User Directory) connections (ldap3)
+	•	Data processing (pandas)
+
+2. Setting Up Configuration & Logging
+
+logger = logging.getLogger(os.path.basename(__file__).split('.')[0])
+g_config: dict = {}
+
+What this does:
+	•	Creates a logger to track what happens when the script runs.
+	•	Defines g_config, a dictionary that will store configuration values.
+
+3. Parsing Command Line Arguments
+
+def args_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-file", required=True, type=argparse.FileType("r"), help="Config file (json format)")
+    parser.add_argument("--data-source", required=True, type=argparse.FileType("r"), help="Formatted JSON that will be processed by the script")
+    return parser
+
+What this does:
+	•	Defines command-line arguments:
+	•	--config-file: A JSON file with settings.
+	•	--data-source: A JSON file with data to process.
+
+4. Reading Configuration Files
+
+def process_configuration(args: argparse.Namespace) -> collections.abc.MutableMapping:
+    global g_config
+    g_config = json.load(args.config_file)
+    g_config.update(json.load(args.data_source))
+    return g_config
+
+What this does:
+	•	Reads the config file and data file.
+	•	Loads both files into g_config, which acts as the main settings dictionary.
+
+5. Setting Up Logging
+
+def setup_logging(log_level: str = "DEBUG"):
+    logging.basicConfig(level=logging.getLevelName(log_level),
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+What this does:
+	•	Configures logging to show messages at different levels (DEBUG, INFO, ERROR, etc.).
+
+6. Connecting to Impala (Database)
+
+@lru_cache()
+def get_connection(impala_host: str, impala_port: int = 21050, database: str = "default") -> Any:
+    connection = connect(host=impala_host, port=impala_port, database=database, auth_mechanism="GSSAPI")
+    return connection
+
+What this does:
+	•	Connects to the Impala database.
+	•	Uses GSSAPI (Kerberos) for secure authentication.
+
+7. Executing Queries on Impala
+
+def exec_query(cursor=None, query: str = None) -> Optional[Tuple[Dict]]:
+    fetch_rows = int(g_config.get("fetch_rows", 10))
+    values = []
+    
+    if cursor and query:
+        cursor.execute(query)
+        rows = cursor.fetchmany(fetch_rows)
+        values.extend(rows)
+        
+    return {"data": values}
+
+What this does:
+	•	Runs an SQL query on the Impala database.
+	•	Retrieves up to fetch_rows rows at a time.
+
+8. Connecting to LDAP (User Directory)
+
+@lru_cache()
+def get_ldap_connection() -> ldap3.Connection:
+    ldap_server_uri = g_config.get("ldap.server_uri")
+    ldap_search_base = g_config.get("ldap.search_base")
+    ldap_server = ldap3.Server(host=ldap_server_uri, auto_bind=ldap3.AUTO_BIND_NO_TLS)
+    ldap_conn = ldap3.Connection(ldap_server, authentication=ldap3.SASL, sasl_mechanism=ldap3.GSSAPI, auto_referrals=True)
+    return ldap_conn
+
+What this does:
+	•	Connects to the LDAP server to fetch user authentication data.
+
+9. Fetching Users & Roles from Impala
+
+def get_dataset(connection=None, queries: List[str] = None) -> Any:
+    results = []
+    if connection and queries:
+        with connection.cursor() as cursor:
+            for query in queries:
+                results.append(exec_query(cursor, query))
+    return results
+
+What this does:
+	•	Runs multiple queries on Impala and retrieves user/role data.
+
+10. Validating Data
+
+def validate_data(ges_users, ges_roles, ges_role_filter):
+    err_flag = False
+    if not ges_users:
+        logger.error('"users" property is missing in JSON')
+        err_flag = True
+    if not ges_roles:
+        logger.error('"roles" property is missing in JSON')
+        err_flag = True
+    if not ges_role_filter:
+        logger.error('"row_level_filters" property is missing in JSON')
+        err_flag = True
+    if err_flag:
+        sys.exit(1)
+
+What this does:
+	•	Ensures that all required fields (users, roles, filters) exist.
+	•	If something is missing, the script stops execution.
+
+11. Creating Users in Apache Ranger
+
+def create_or_update_ranger_user(user_name: str, full_name: str, email: str) -> Tuple[int, Optional[str]]:
+    response = ranger_api(method="get", api_call=f"/service/xusers/users/userName/{user_name}")
+    
+    if response[0] == 400:
+        logger.info(f"User {user_name} does not exist, creating it")
+        user_definition = setup_user_definition(user_name=user_name, full_name=full_name, email=email)
+        create_result = ranger_api(method="post", api_call="/service/xusers/users", data=user_definition)
+        return create_result
+    return response
+
+What this does:
+	•	Checks if a user exists in Ranger.
+	•	If not found, creates the user.
+
+12. Creating or Updating Ranger Policies
+
+def create_or_update_ranger_policies(policies: List):
+    for policy in policies:
+        results = ranger_api(method="post", api_call="/service/public/v2/api/policy", data=policy)
+
+What this does:
+	•	Pushes access control policies to Apache Ranger.
+
+13. Closing Connections & Cleanup
+
+if __name__ == "__main__":
+    try:
+        main()
+    except RuntimeError as e:
+        impala_connection = g_config.get("impala_connection")
+        if impala_connection:
+            impala_connection.close()
+        ldap_connection = g_config.get("ldap_connection")
+        if ldap_connection:
+            ldap_connection.close()
+        sys.exit(1)
+
+What this does:
+	•	Runs the main function.
+	•	Closes all database connections if an error occurs.
+
+Final Summary
+	•	The script fetches users & roles from Impala.
+	•	It retrieves authentication data from LDAP.
+	•	It creates or updates users & roles in Apache Ranger.
+	•	It applies security policies to protect data.
+	•	It logs everything and handles errors properly.
+
+Let me know if you want a specific section explained in more detail! 🚀
