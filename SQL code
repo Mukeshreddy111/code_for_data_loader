@@ -1,0 +1,20 @@
+SELECT
+  CONCAT(
+    '{',
+    '"viewname": "', test.viewname, '",',
+    '"category": "', test.category, '",',
+    '"usergroups": [',
+    '{',
+    '"usergroup": {',
+    '"permission": [',
+    '{',
+    '"region": "', test.region, '",',
+    '"desk_id": "', test.desk_id, '",',
+    '"app_type": "', test.app_type, '"',
+    '}',
+    ']}',
+    '}',
+    ']',
+    '}'
+  ) AS json_output
+FROM test;
