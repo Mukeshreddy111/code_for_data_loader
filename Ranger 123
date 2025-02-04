@@ -1,0 +1,42 @@
+WITH test AS (
+    SELECT 
+        v.viewname,
+        c.category,
+        c.usergroup,
+        LOWER(REPLACE(c.usergroup, ' ', '')) AS e2f_roleid,
+        c.region,
+        c.apptype,
+        c.deskid,
+        c.businessflow,
+        c.orderorigination,
+        c.greenproductcode
+    FROM 
+        gmdp_gmis.entitlement_criteria c
+    JOIN 
+        gmdp_gmis.view_mappings v 
+        ON c.category = v.category
+    WHERE 
+        c.region IS NOT NULL 
+        AND c.deskid IS NOT NULL 
+        AND c.apptype IS NOT NULL
+)
+SELECT 
+    JSON_OBJECT(
+        'view_name', viewname, 
+        'category', category, 
+        'user_groups', JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'user_group', usergroup,
+                'e2f_roleid', e2f_roleid,
+                'permissions', JSON_OBJECT(
+                    'region', COALESCE(region, 'NULL'),
+                    'desk_id', COALESCE(deskid, 'NULL'),
+                    'app_type', COALESCE(apptype, 'NULL')
+                )
+            )
+        )
+    ) AS json_output
+FROM 
+    test
+GROUP BY 
+    viewname, category;
