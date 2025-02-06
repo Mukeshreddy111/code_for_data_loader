@@ -1,0 +1,93 @@
+WITH test AS (
+    SELECT
+        v.viewname,
+        c.category,
+        c.usergroup,
+        CONCAT('_ees_', LOWER(REPLACE(c.usergroup, ' ', '_'))) AS e2r_roleid,
+        COALESCE(c.region, 'NULL') AS region,
+        COALESCE(c.apptype, 'NULL') AS apptype,
+        COALESCE(c.deskid, 'NULL') AS deskid,
+        COALESCE(c.businessflow, 'NULL') AS businessflow,
+        COALESCE(c.orderorigination, 'NULL') AS orderorigination,
+        COALESCE(c.greenproductcode, 'NULL') AS greenproductcode,
+        c.source,
+        c.jsonbasecriteria
+    FROM gmdp_gmis.entitlement_criteria c
+    JOIN gmdp_gmis.entitlement_view_category v
+    ON c.category = v.category
+    WHERE c.usergroup LIKE '%'
+    ORDER BY c.category, v.viewname, c.usergroup, c.region, c.apptype, c.deskid, c.businessflow, c.orderorigination, c.greenproductcode, c.source, c.jsonbasecriteria
+)
+
+SELECT 
+    L.viewname, 
+    regexp_replace(
+        regexp_replace(
+            regexp_replace(
+                regexp_replace(
+                    regexp_replace(
+                        L.JSON_STRUCT, 
+                        ' and region in \(NULL\)', '', 'g'
+                    ), 
+                    ' and deskid in \(NULL\)', '', 'g'
+                ), 
+                ' and apptype in \(NULL\)', '', 'g'
+            ),
+            ' and businessflow in \(NULL\)', '', 'g'
+        ),
+        ' and orderorigination in \(NULL\)', '', 'g'
+    ) AS json_struct 
+FROM (
+    SELECT 
+        v.viewname,
+        k.category,
+        v.viewname AS view_name,
+        '[{"user_groups": [' || k.user_group || ']}]' AS JSON_STRUCT 
+    FROM (
+        SELECT 
+            T.viewname,
+            T.category,
+            GROUP_CONCAT(
+                CONCAT(
+                    '{ "user_group": "', T.usergroup, '"',
+                    CASE WHEN T.filters IS NOT NULL AND T.filters != '' THEN CONCAT(', "filter": "', T.filters, '"') ELSE '' END, 
+                    ', "permissions": ', T.permissions, ' }'
+                ), ','
+            ) AS user_group 
+        FROM (
+            SELECT 
+                viewname,
+                category,
+                usergroup,
+                -- Dynamically construct filter
+                TRIM(BOTH ' ' FROM 
+                    CONCAT_WS(' ',
+                        CASE WHEN region != 'NULL' THEN CONCAT('region in (''', region, ''')') ELSE '' END,
+                        CASE WHEN deskid != 'NULL' THEN CONCAT('and deskid in (''', deskid, ''')') ELSE '' END,
+                        CASE WHEN apptype != 'NULL' THEN CONCAT('and apptype in (''', apptype, ''')') ELSE '' END,
+                        CASE WHEN businessflow != 'NULL' THEN CONCAT('and businessflow in (''', businessflow, ''')') ELSE '' END,
+                        CASE WHEN orderorigination != 'NULL' THEN CONCAT('and orderorigination in (''', orderorigination, ''')') ELSE '' END,
+                        CASE WHEN greenproductcode != 'NULL' THEN CONCAT('and greenproductcode in (''', greenproductcode, ''')') ELSE '' END
+                    )
+                ) AS filters,
+
+                -- Dynamically construct JSON permissions
+                '[' || GROUP_CONCAT(
+                    DISTINCT TRIM(BOTH ',' FROM CONCAT(
+                        '{ ',
+                        CASE WHEN region != 'NULL' THEN CONCAT('"region": "', region, '", ') ELSE '' END,
+                        CASE WHEN deskid != 'NULL' THEN CONCAT('"desk_id": "', deskid, '", ') ELSE '' END,
+                        CASE WHEN businessflow != 'NULL' THEN CONCAT('"businessflow": "', businessflow, '", ') ELSE '' END,
+                        CASE WHEN orderorigination != 'NULL' THEN CONCAT('"orderorigination": "', orderorigination, '", ') ELSE '' END,
+                        CASE WHEN greenproductcode != 'NULL' THEN CONCAT('"greenproductcode": "', greenproductcode, '", ') ELSE '' END,
+                        CASE WHEN apptype != 'NULL' THEN CONCAT('"app_type": "', apptype, '" ') ELSE '' END,
+                        '}'
+                    ))
+                ) || ']' AS permissions
+            FROM test
+            WHERE 1=1
+            GROUP BY viewname, category, usergroup, region, deskid, apptype, businessflow, orderorigination, greenproductcode
+        ) T
+        GROUP BY T.viewname, T.category
+    ) k
+) L;
