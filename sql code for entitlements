@@ -19,10 +19,9 @@ WITH t AS (
 )
 SELECT 
     viewname, 
-    CONCAT(
-        '{ "view_name": "', t.viewname, '", ',
-        '"category": "', t.category, '", ',
-        '"user_group": [', GROUP_CONCAT('"', g.usergroup, '"'), '], ',
+    category, 
+    GROUP_CONCAT(DISTINCT CONCAT(
+        '{ "user_group": "', g.usergroup, '", ',
         '"filter": "',
             CASE WHEN region <> '' THEN 'region in (\'' || region || '\') ' ELSE '' END,
             CASE WHEN apptype <> '' THEN 'and apptype in (\'' || apptype || '\') ' ELSE '' END,
@@ -33,7 +32,7 @@ SELECT
             CASE WHEN deskid <> '' THEN '"desk_id": "' || deskid || '", ' ELSE '' END,
             CASE WHEN apptype <> '' THEN '"app_type": "' || apptype || '"' ELSE '' END,
         '} }'
-    ) AS json_output
+    )) AS json_output
 FROM t
 WHERE region <> '' AND deskid <> '' AND apptype <> ''
-GROUP BY viewname, category, region, apptype, deskid;
+GROUP BY viewname, category;
