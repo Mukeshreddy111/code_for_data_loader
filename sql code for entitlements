@@ -1,0 +1,39 @@
+WITH t AS (
+    SELECT 
+        u.viewname, 
+        c.category, 
+        g.usergroup, 
+        coalesce(region, '') AS region, 
+        coalesce(apptype, '') AS apptype, 
+        coalesce(deskid, '') AS deskid,
+        c.businessflow, 
+        c.orderorigination, 
+        c.greenproductcode, 
+        c.source, 
+        c.jsonbasecriteria
+    FROM gmis.entitlement_criteria c
+    JOIN gmis.entitlement_view u 
+        ON c.viewname = u.viewname
+    JOIN gmis.user_group g 
+        ON g.category = c.category
+)
+SELECT 
+    viewname, 
+    CONCAT(
+        '{ "view_name": "', t.viewname, '", ',
+        '"category": "', t.category, '", ',
+        '"user_group": [', GROUP_CONCAT('"', g.usergroup, '"'), '], ',
+        '"filter": "',
+            CASE WHEN region <> '' THEN 'region in (\'' || region || '\') ' ELSE '' END,
+            CASE WHEN apptype <> '' THEN 'and apptype in (\'' || apptype || '\') ' ELSE '' END,
+            CASE WHEN deskid <> '' THEN 'and deskid in (\'' || deskid || '\')' ELSE '' END,
+        '", ',
+        '"permissions": {',
+            CASE WHEN region <> '' THEN '"region": "' || region || '", ' ELSE '' END,
+            CASE WHEN deskid <> '' THEN '"desk_id": "' || deskid || '", ' ELSE '' END,
+            CASE WHEN apptype <> '' THEN '"app_type": "' || apptype || '"' ELSE '' END,
+        '} }'
+    ) AS json_output
+FROM t
+WHERE region <> '' AND deskid <> '' AND apptype <> ''
+GROUP BY viewname, category, region, apptype, deskid;
