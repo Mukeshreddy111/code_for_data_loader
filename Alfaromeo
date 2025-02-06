@@ -70,3 +70,78 @@ WHERE region IS NOT NULL
     AND deskid IS NOT NULL 
     AND apptype IS NOT NULL
 GROUP BY viewname, category, usergroup;
+$$$&&
+SELECT 
+    v.viewname, 
+    c.category, 
+    c.usergroup, 
+    
+    -- Construct the filter dynamically without NULLs
+    CONCAT(
+        '"filter": "',
+        'region IN (' || CASE WHEN c.region IS NOT NULL THEN "'" || c.region || "'" ELSE '' END || ') ',
+
+        CASE 
+            WHEN c.apptype IS NOT NULL THEN 'AND apptype IN (' || "'" || c.apptype || "'" || ') ' 
+            ELSE '' 
+        END,
+
+        CASE 
+            WHEN c.businessflow IS NOT NULL THEN 'AND businessflow IN (' || "'" || c.businessflow || "'" || ') ' 
+            ELSE '' 
+        END,
+
+        CASE 
+            WHEN c.orderorigination IS NOT NULL THEN 'AND orderorigination IN (' || "'" || c.orderorigination || "'" || ') ' 
+            ELSE '' 
+        END,
+
+        CASE 
+            WHEN c.greenproductcode IS NOT NULL THEN 'AND greenproductcode IN (' || "'" || c.greenproductcode || "'" || ') ' 
+            ELSE '' 
+        END,
+
+        CASE 
+            WHEN c.deskid IS NOT NULL THEN 'AND deskid IN (' || "'" || c.deskid || "'" || ') ' 
+            ELSE '' 
+        END,
+        '"'
+    ) AS filter_json,
+
+    -- Construct JSON structure without NULL values
+    CONCAT(
+        '{',
+        CASE WHEN c.region IS NOT NULL 
+            THEN '"region": "' || c.region || '", ' 
+        ELSE '' END,
+
+        CASE WHEN c.deskid IS NOT NULL 
+            THEN '"desk_id": "' || c.deskid || '", ' 
+        ELSE '' END,
+
+        CASE WHEN c.businessflow IS NOT NULL 
+            THEN '"businessflow": "' || c.businessflow || '", ' 
+        ELSE '' END,
+
+        CASE WHEN c.orderorigination IS NOT NULL 
+            THEN '"orderorigination": "' || c.orderorigination || '", ' 
+        ELSE '' END,
+
+        CASE WHEN c.greenproductcode IS NOT NULL 
+            THEN '"greenproductcode": "' || c.greenproductcode || '", ' 
+        ELSE '' END,
+
+        CASE WHEN c.apptype IS NOT NULL 
+            THEN '"app_type": "' || c.apptype || '"' 
+        ELSE '' END,
+
+        '}'
+    ) AS json_struct
+
+FROM gmpd_gmis.entitlement_criteria c
+JOIN gmpd_gmis.entitlement_view_category v
+    ON c.category = v.category
+WHERE c.region IS NOT NULL 
+    AND c.deskid IS NOT NULL 
+    AND c.apptype IS NOT NULL
+GROUP BY v.viewname, c.category, c.usergroup, c.region, c.apptype, c.deskid, c.businessflow, c.orderorigination, c.greenproductcode;
