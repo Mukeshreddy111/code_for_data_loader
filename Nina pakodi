@@ -1,0 +1,52 @@
+SELECT 
+    viewname, 
+    category, 
+    usergroup,
+    
+    -- Build the filter dynamically
+    CONCAT(
+        '"filter": "',
+        'region IN (' || CASE WHEN region IS NOT NULL THEN "'" || region || "'" ELSE '' END || ') ',
+        CASE WHEN apptype IS NOT NULL THEN 'AND apptype IN ('" || apptype || "') ' ELSE '' END,
+        CASE WHEN businessflow IS NOT NULL THEN 'AND businessflow IN ('" || businessflow || "') ' ELSE '' END,
+        CASE WHEN orderorigination IS NOT NULL THEN 'AND orderorigination IN ('" || orderorigination || "') ' ELSE '' END,
+        CASE WHEN greenproductcode IS NOT NULL THEN 'AND greenproductcode IN ('" || greenproductcode || "') ' ELSE '' END,
+        CASE WHEN deskid IS NOT NULL THEN 'AND deskid IN ('" || deskid || "') ' ELSE '' END,
+        '"'
+    ) AS filter_json,
+
+    -- Build the permissions JSON dynamically
+    CONCAT(
+        '{',
+        CASE WHEN region IS NOT NULL 
+            THEN '"region": "' || region || '", ' 
+        ELSE '' END,
+
+        CASE WHEN deskid IS NOT NULL 
+            THEN '"desk_id": "' || deskid || '", ' 
+        ELSE '' END,
+
+        CASE WHEN businessflow IS NOT NULL 
+            THEN '"businessflow": "' || businessflow || '", ' 
+        ELSE '' END,
+
+        CASE WHEN orderorigination IS NOT NULL 
+            THEN '"orderorigination": "' || orderorigination || '", ' 
+        ELSE '' END,
+
+        CASE WHEN greenproductcode IS NOT NULL 
+            THEN '"greenproductcode": "' || greenproductcode || '", ' 
+        ELSE '' END,
+
+        CASE WHEN apptype IS NOT NULL 
+            THEN '"app_type": "' || apptype || '"' 
+        ELSE '' END,
+
+        '}'
+    ) AS json_struct
+
+FROM some_table
+WHERE region IS NOT NULL 
+    AND deskid IS NOT NULL 
+    AND apptype IS NOT NULL
+GROUP BY viewname, category, usergroup;
