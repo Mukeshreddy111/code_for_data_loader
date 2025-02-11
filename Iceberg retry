@@ -1,0 +1,72 @@
+Yes, RewriteTablePath in Iceberg is designed to automatically update the path references in all metadata files, including old metadata (Avro) files, without requiring manual edits.
+
+🔹 What RewriteTablePath Does Automatically
+
+When you run:
+
+Actions.forTable(icebergTable)
+    .rewriteTablePath()
+    .withLocation("o3fs://mybucket.omservice/iceberg_table/")
+    .execute();
+
+Iceberg will:
+✅ Update the table’s root location (location in metadata.json).
+✅ Rewrite all metadata references (including manifest-list and manifest files).
+✅ Ensure old snapshots and history remain intact.
+✅ Change all data file paths inside Avro metadata files (snap-*.avro, manifest-*.avro).
+
+🔍 How It Works Internally
+	1.	Reads existing metadata (vX.metadata.json).
+	2.	Scans all referenced manifest lists (snap-XXXX.avro) and manifests (manifest-XXXX.avro).
+	3.	Rewrites all file paths in metadata & Avro files (from HDFS → Ozone).
+	4.	Commits the new metadata location to the Iceberg catalog.
+	5.	Preserves snapshots & history, so old table versions remain accessible.
+
+📌 Does It Change Old Metadata Files?
+
+Metadata File	Does RewriteTablePath Update It?
+vX.metadata.json	✅ Yes, updates location
+snap-XXXX.avro (manifest list)	✅ Yes, updates file paths
+manifest-XXXX.avro (manifest)	✅ Yes, updates file paths
+data/*.parquet	❌ No, assumes data is already moved
+
+🚀 When Should You Use RewriteTablePath?
+
+✅ Best Option If:
+	•	You are moving the entire Iceberg table (data & metadata) from HDFS → Ozone.
+	•	You want to preserve table history and snapshots.
+	•	You don’t want to manually edit Avro files.
+
+❌ When It Won’t Work:
+	•	If you only move metadata files (not data files), Iceberg still expects data to be in the old location.
+	•	If you don’t have write permissions to the Iceberg catalog.
+	•	If your Iceberg catalog doesn’t support table path rewrites (some Hive-based catalogs may not support it).
+
+🔥 Recommended Migration Workflow (HDFS → Ozone)
+
+1️⃣ Move Data & Metadata to Ozone
+
+hdfs dfs -cp -f hdfs://namenode/user/hive/warehouse/iceberg_table/ \
+    o3fs://mybucket.omservice/iceberg_table/
+
+2️⃣ Run RewriteTablePath
+
+Actions.forTable(icebergTable)
+    .rewriteTablePath()
+    .withLocation("o3fs://mybucket.omservice/iceberg_table/")
+    .execute();
+
+3️⃣ Verify Migration
+
+Run:
+
+SELECT * FROM iceberg_table.snapshots;
+SELECT COUNT(*) FROM iceberg_table;
+
+🎯 Key Takeaways
+	•	RewriteTablePath automatically updates all metadata files (JSON & Avro).
+	•	No manual Avro file editing is needed.
+	•	Ensure data is copied first before running the command.
+	•	Preserves Iceberg table history and snapshots.
+
+Would you like a script to automate this migration end-to-end? 🚀
