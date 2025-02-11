@@ -70,3 +70,13 @@ SELECT COUNT(*) FROM iceberg_table;
 	•	Preserves Iceberg table history and snapshots.
 
 Would you like a script to automate this migration end-to-end? 🚀
+////
+
+import org.apache.iceberg.spark.actions.SparkActions
+
+val table = "my_catalog.my_db.iceberg_table" // Use your actual table name
+
+SparkActions.get(spark)
+  .rewriteTablePath(table)
+  .withLocation("o3fs://mybucket.omservice/iceberg_table/")
+  .execute()
