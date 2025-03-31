@@ -1,0 +1,82 @@
+ISDA‑Specific Fields (Block for ONA)
+IsdaAgreement
+ (The ISDA fuzzy search panel for selecting an ISDA agreement)
+
+JointAndSeveralIsda
+ (Combo box providing “joint and several” options)
+
+ResolutionProtocolIncorporated
+ (Multi–combo box for selecting resolution protocols)
+
+SeeIsda
+ (Checkbox that triggers additional ISDA-specific resolution protocol logic)
+
+ResolutionProtocolUS
+ (Combo box for US resolution protocol selection)
+
+ResolutionProtocolFrance
+ (Combo box for France resolution protocol selection)
+
+ResolutionProtocolIreland
+ (Combo box for Ireland resolution protocol selection)
+
+SPV‑Specific Fields (Block for ONA)
+AnnexMultiComboBoxPanel
+ (The panel for annex selection, used in ISDA/SPV scenarios)
+
+TMA‑Specific Fields (Block for ONA)
+SpecifiedAgreementContracts
+ (Multiline text field for capturing specified trade agreements)
+
+Prime Brokerage (PB)‑Specific Fields (Block for ONA)
+PrimeBrokerId
+ (Label showing the prime broker’s identifier)
+
+PrimeBrokerName
+ (Label showing the prime broker’s legal name)
+
+DesignatedPartyObject
+ (Field with search component for selecting a designated party)
+
+DesignatedPartyCoperId
+ (Text field holding the designated party’s counterparty ID)
+
+DesignatedPartyName
+ (Label for the designated party’s name)
+
+designatedPartySearch
+ (Component/button used for searching designated parties)
+
+designatedPartySearchComponent
+ (Additional UI component for designated party search)
+
+MSFTA / Account‑Specific Fields (Block for ONA)
+WholeLoanMasterNetting
+ (Combo box for whole–loan netting options)
+
+MartiniAccountGrid
+ (Grid panel displaying account details)
+
+CSA‑Specific Fields (Block for ONA)
+CSA Fields
+ (Any panels, fields, or helper sections dedicated to managing Collateral Support Agreements)
+
+Other Specialized Fields (Block for ONA)
+Trade Grids
+ (Grids showing detailed trade information)
+
+Rated Entity Sections
+ (Sections displaying rated entity data)
+
+Close-Out Netting Rules
+ (Fields or panels managing close-out netting rules)
+
+Rule Book Sections
+ (Sections related to rule book details)
+
+Additional Fields to Block (Block for ONA)
+applicableCentralCptyGrid
+ (Grid displaying applicable central counterparty information)
+
+governinglawGrid (and any variants)
+ (Any grid or multi-selection component for governing law – note that a simple Governing Law field is required, but the grid version should be hidden)
