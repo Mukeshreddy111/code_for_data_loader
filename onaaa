@@ -1,0 +1,80 @@
+def lazy_content(self):
+    # ... existing code to construct the UI components ...
+    
+    # Retrieve the contract type from the agreement document
+    contract_type = self.AgreementDocument().AtomAgreement().ContractType()
+    
+    # If contract type is "ONA", hide the extra fields
+    if contract_type == "ONA":
+        try:
+            # ISDA-Specific Fields
+            if hasattr(self, "IsdaAgreement"):
+                self.IsdaAgreement.setVisible(False)
+            if hasattr(self, "JointAndSeveralIsda"):
+                self.JointAndSeveralIsda.setVisible(False)
+            if hasattr(self, "ResolutionProtocolIncorporated"):
+                self.ResolutionProtocolIncorporated.setVisible(False)
+            if hasattr(self, "SeeIsda"):
+                self.SeeIsda.setVisible(False)
+            if hasattr(self, "ResolutionProtocolUS"):
+                self.ResolutionProtocolUS.setVisible(False)
+            if hasattr(self, "ResolutionProtocolFrance"):
+                self.ResolutionProtocolFrance.setVisible(False)
+            if hasattr(self, "ResolutionProtocolIreland"):
+                self.ResolutionProtocolIreland.setVisible(False)
+            
+            # SPV-Specific Fields
+            if hasattr(self, "AnnexMultiComboBoxPanel"):
+                self.AnnexMultiComboBoxPanel.setVisible(False)
+            
+            # TMA-Specific Fields
+            if hasattr(self, "SpecifiedAgreementContracts"):
+                self.SpecifiedAgreementContracts.setVisible(False)
+            
+            # Prime Brokerage (PB)-Specific Fields
+            if hasattr(self, "PrimeBrokerId"):
+                self.PrimeBrokerId.setVisible(False)
+            if hasattr(self, "PrimeBrokerName"):
+                self.PrimeBrokerName.setVisible(False)
+            if hasattr(self, "DesignatedPartyObject"):
+                self.DesignatedPartyObject.setVisible(False)
+            if hasattr(self, "DesignatedPartyCoperId"):
+                self.DesignatedPartyCoperId.setVisible(False)
+            if hasattr(self, "DesignatedPartyName"):
+                self.DesignatedPartyName.setVisible(False)
+            if hasattr(self, "designatedPartySearch"):
+                self.designatedPartySearch.setVisible(False)
+            if hasattr(self, "designatedPartySearchComponent"):
+                self.designatedPartySearchComponent.setVisible(False)
+            
+            # MSFTA / Account-Specific Fields
+            if hasattr(self, "WholeLoanMasterNetting"):
+                self.WholeLoanMasterNetting.setVisible(False)
+            if hasattr(self, "MartiniAccountGrid"):
+                self.MartiniAccountGrid.setVisible(False)
+            
+            # CSA-Specific Fields (grouped in a panel, if applicable)
+            if hasattr(self, "CSA_Panel"):
+                self.CSA_Panel.setVisible(False)
+            
+            # Other Specialized Fields
+            if hasattr(self, "TradeGrids"):
+                self.TradeGrids.setVisible(False)
+            if hasattr(self, "RatedEntitySections"):
+                self.RatedEntitySections.setVisible(False)
+            if hasattr(self, "CloseOutNettingRules"):
+                self.CloseOutNettingRules.setVisible(False)
+            if hasattr(self, "RuleBookSections"):
+                self.RuleBookSections.setVisible(False)
+            
+            # Additional Fields to Block
+            if hasattr(self, "applicableCentralCptyGrid"):
+                self.applicableCentralCptyGrid.setVisible(False)
+            if hasattr(self, "governinglawGrid"):
+                self.governinglawGrid.setVisible(False)
+        except Exception as e:
+            logger.error("Error while hiding ONA fields: %s", str(e))
+    
+    # ... continue building the final UI container ...
+    content = [ui.ScrollViewer(ui.VL([...]))]
+    return content
