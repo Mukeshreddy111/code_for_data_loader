@@ -1,0 +1,33 @@
+def hide_unallowed_fields_for_ona(self):
+    allowed_fields = {
+        "counterpartyIdField",
+        "counterpartyName",
+        "bamlEntityCoperId",
+        "bamlEntityName",
+        "bamlJurisdiction",
+        "governingLaw",
+        "contractType",
+        "contractStatus",
+        "dataProfilingStatus",
+        "contractDate",
+        "reviewer1",
+        "reviewer2",
+        "effectiveStartDate",
+        "effectiveEndDate",
+        "baseCurrency",
+        "terminationCurrencyBAML",
+        "terminationCurrencyCP",
+        "bamlSignatory"
+    }
+
+    for attr_name in dir(self):
+        if attr_name.startswith("__"):
+            continue
+
+        if attr_name not in allowed_fields:
+            try:
+                attr = getattr(self, attr_name)
+                if hasattr(attr, "setVisible"):
+                    attr.setVisible(False)
+            except Exception as e:
+                logger.warning(f"Could not hide field {attr_name}: {str(e)}")
