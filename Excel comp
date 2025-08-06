@@ -1,19 +1,28 @@
 import pandas as pd
 import os
 
-# Replace these with your actual paths
-file_a_path = r'C:\Users\YourUsername\Desktop\A.xlsx'
-file_b_path = r'C:\Users\YourUsername\Desktop\B.xlsx'
+# Load both files from Desktop
+desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+file_a_path = os.path.join(desktop, "A.xlsx")
+file_b_path = os.path.join(desktop, "B.xlsx")
 
-# Load both Excel files
+# Read Excel files
 df_a = pd.read_excel(file_a_path)
 df_b = pd.read_excel(file_b_path)
 
-# Compare full rows (if even one cell is different, it will show)
-df_diff = pd.concat([df_b, df_a]).drop_duplicates(keep=False)
+# Ensure 'Test' column exists
+if 'Test' not in df_a.columns or 'Test' not in df_b.columns:
+    raise ValueError("Column 'Test' not found in one or both files.")
 
-# Save the result
-output_path = r'C:\Users\YourUsername\Desktop\Rows_in_B_not_in_A.xlsx'
-df_diff.to_excel(output_path, index=False)
+# Clean and normalize (trim + lowercase for accurate match)
+a_test = df_a['Test'].astype(str).str.strip().str.lower()
+b_test = df_b['Test'].astype(str).str.strip().str.lower()
 
-print(f'Done! {len(df_diff)} rows found and saved to:\n{output_path}')
+# Get unique values in B not in A
+diff_values = sorted(set(b_test) - set(a_test))
+
+# Print count and values
+print(f"🧮 Count of 'Test' values in B but not in A: {len(diff_values)}\n")
+
+for val in diff_values:
+    print(val)
