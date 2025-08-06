@@ -1,0 +1,19 @@
+import pandas as pd
+import os
+
+# Replace these with your actual paths
+file_a_path = r'C:\Users\YourUsername\Desktop\A.xlsx'
+file_b_path = r'C:\Users\YourUsername\Desktop\B.xlsx'
+
+# Load both Excel files
+df_a = pd.read_excel(file_a_path)
+df_b = pd.read_excel(file_b_path)
+
+# Compare full rows (if even one cell is different, it will show)
+df_diff = pd.concat([df_b, df_a]).drop_duplicates(keep=False)
+
+# Save the result
+output_path = r'C:\Users\YourUsername\Desktop\Rows_in_B_not_in_A.xlsx'
+df_diff.to_excel(output_path, index=False)
+
+print(f'Done! {len(df_diff)} rows found and saved to:\n{output_path}')
