@@ -1,16 +1,13 @@
-# --- OVERRIDE the GRID Jurisdiction editor (after schema wiring) ---
+# --- OVERRIDE Jurisdiction editor after schema wiring ---
 props = self.AtomComplexGrid().ColumnProperties()
-print("GRID COL KEYS:", list(props.keys()))   # for debugging key names
+print("GRID COL KEYS:", list(props.keys()))   # debug
 
 jkey = next((k for k in props if k.strip().lower() == "jurisdiction"), None)
 if jkey:
     ed = props[jkey].setdefault("EditorSettings", {})
-
-    # hardcoded test values to confirm py311 wiring
-    ed["Items"] = ["Argentina", "Australia", "Austria", "Belgium"]
-    ed["value"] = ["Australia", "Belgium"]
-
-    print("GRID JUR OVERRIDE:", jkey,
-          "items:", len(ed.get("Items") or []),
+    # hardcoded test values
+    ed["Items"] = ["Argentina", "Australia", "Austria", "Belgium"]   # list[str]
+    ed["value"] = ["Australia", "Belgium"]                           # list[str] for multi-select
+    print("GRID JUR OVERRIDE:", jkey, "items:", len(ed.get("Items") or []),
           "value:", ed.get("value") or ed.get("selected"))
-# -------------------------------------------------------------------
+# --------------------------------------------------------
