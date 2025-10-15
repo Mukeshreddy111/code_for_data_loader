@@ -1,0 +1,24 @@
+# resolve the table across builds
+src = getattr(cubeRes, "tablesrc", None)
+if src is None:
+    if hasattr(cubeRes, "TableSrc"):
+        src = cubeRes.TableSrc()
+    elif hasattr(cubeRes, "ComputedTableSource"):
+        src = cubeRes.ComputedTableSource()
+    elif hasattr(cubeRes, "tableSrc"):
+        src = cubeRes.tableSrc
+
+# if it's a method, call it; if it's an object, keep it
+src = src() if callable(src) else src
+
+# ✅ get the actual Table object (call if callable)
+if hasattr(src, "Table"):
+    table_attr = src.Table
+    table = table_attr() if callable(table_attr) else table_attr
+else:
+    table = None
+
+if table is None:
+    raise RuntimeError(f"Could not resolve table source from cubeRes; got: {type(src)}")
+
+self.sync_regulation_ui_to_model(table, self.AtomComplexGrid())
