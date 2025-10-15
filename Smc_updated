@@ -1,0 +1,17 @@
+cur = dict_name[col][key].get("value")
+
+# normalize current value to a list[str]
+if isinstance(cur, str):
+    cur_list = [cur]
+elif isinstance(cur, (list, tuple)):
+    cur_list = [str(x) for x in cur if x is not None]
+else:
+    cur_list = []
+
+# ensure selection is valid
+if not jur_list:
+    dict_name[col][key]["value"] = []
+elif not cur_list or any(x not in jur_list for x in cur_list):
+    dict_name[col][key]["value"] = [jur_list[0]]
+else:
+    dict_name[col][key]["value"] = cur_list
