@@ -1,38 +1,10 @@
-# --- build display items (NOT codes) exactly like py39 did ---
-JurisJoin = []
-if row.Jurisdictions():
-    for j in row.Jurisdictions().Grid():
-        jur_code = j.Jurisdiction()
-        JurisJoin.append(
-            TermDescription(
-                type_name=types.JURISDICTION_OF_AGREEMENT,
-                code=jur_code,
-                description_key='description'
-            )
-        )
+def onCubeInitialized(self, cubeRes):
+    ...
+    self.AtomComplexGrid().OnTableAvailable(self._rebind_jurisdiction_editor)
 
-d = dict_name.setdefault(col, {}).setdefault(key, {}).setdefault("EditorSettings", {})
-d["Items"] = list(filter(None, JurisJoin))   # <- display items, not codes
-
-# normalize current selection to display strings as well
-cur = d.get("value") or d.get("Value") or d.get("selected") or []
-if isinstance(cur, str):
-    cur = [cur]
-if cur:
-    # map any code-like entries to display strings; keep ones already display
-    cur_disp = []
-    for x in cur:
-        if isinstance(x, str) and len(x) <= 3:  # looks like a code
-            cur_disp.append(TermDescription(type_name=types.JURISDICTION_OF_AGREEMENT,
-                                           code=x,
-                                           description_key='description'))
-        else:
-            cur_disp.append(x)
-    # keep only values that exist in Items
-    d["value"] = [v for v in cur_disp if v in d["Items"]]
-else:
-    d["value"] = d["Items"][:1] if d["Items"] else []
-
-# (optional) quick debug
-print("JUR> Items(sample):", d["Items"][:5])
-print("JUR> value:", d["value"])
+def _rebind_jurisdiction_editor(self, *args, **kwargs):
+    props = self.AtomComplexGrid().ColumnProperties()
+    if "Jurisdiction" in props:
+        ed = props["Jurisdiction"].setdefault("EditorSettings", {})
+        props["Jurisdiction"]["EditorType"] = "checkedcomboboxedit"
+        print("🔁 Rebinding Jurisdiction editor with", len(ed.get("Items", [])), "items")
