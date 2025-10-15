@@ -1,11 +1,31 @@
-Look at the full code in swap_master_confirm_terms.py, especially the update_cube_properties function.
-Inside that function, find the if col == 'Jurisdiction': block.
+ed = dict_name[col][key]  # this is the EditorSettings dict
 
-I want to temporarily hard-code the dropdown values for the Jurisdiction column to test the GUI behavior.
+hardcoded_items = ["Argentina", "Australia", "Austria", "Belgium"]
+hardcoded_selected = ["Australia", "Belgium"]
 
-Keep everything else the same, but replace only the final line in that block (currently setting dict_name[col][key][attr] = list(filter(None, JurisJoin))).
+# write to every plausible key name (covers py39–py311 differences)
+for k in ["Items", "items", "Options", "options", "List", "list", attr]:
+    ed[k] = hardcoded_items
 
-Instead, show me the updated code for that Jurisdiction block where:
-	•	The dropdown Items list is hard-coded to ["Argentina", "Australia", "Austria", "Belgium"]
-	•	The selected value list is hard-coded to ["Australia", "Belgium"]
-	•	A print statement logs both the Items and Selected lists
+for k in ["value", "Value", "selected"]:
+    ed[k] = hardcoded_selected
+
+print(">>> JUR keys:", list(ed.keys()))
+print(">>> JUR Items:", ed.get("Items"))
+print(">>> JUR Options:", ed.get("Options"))
+print(">>> JUR List:", ed.get("List"))
+print(">>> JUR Selected:", ed.get("value") or ed.get("selected"))
+# --- END TEST BLOCK ---
+That’s cleaner (less repetition) but identical to your pasted lines.
+2️⃣ In onCubeInitialized()
+Right before the line that calls
+self.sync_regulation_ui_to_model(...)
+add this small live check:
+props = self.AtomComplexGrid().ColumnProperties()
+ed_live = props.get("Jurisdiction", {}).get("EditorSettings", {})
+print(">>> LIVE JUR keys:", list(ed_live.keys()))
+print(">>> LIVE lens:", 
+      len(ed_live.get("Items") or []),
+      len(ed_live.get("Options") or []),
+      len(ed_live.get("List") or []))
+print(">>> LIVE selected:", ed_live.get("value") or ed_live.get("selected"))
