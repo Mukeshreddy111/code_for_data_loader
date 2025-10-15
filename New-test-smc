@@ -1,0 +1,11 @@
+Look at the full code in swap_master_confirm_terms.py, especially the update_cube_properties function.
+Inside that function, find the if col == 'Jurisdiction': block.
+
+I want to temporarily hard-code the dropdown values for the Jurisdiction column to test the GUI behavior.
+
+Keep everything else the same, but replace only the final line in that block (currently setting dict_name[col][key][attr] = list(filter(None, JurisJoin))).
+
+Instead, show me the updated code for that Jurisdiction block where:
+	•	The dropdown Items list is hard-coded to ["Argentina", "Australia", "Austria", "Belgium"]
+	•	The selected value list is hard-coded to ["Australia", "Belgium"]
+	•	A print statement logs both the Items and Selected lists
