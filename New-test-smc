@@ -1,10 +1,1 @@
-def onCubeInitialized(self, cubeRes):
-    ...
-    self.AtomComplexGrid().OnTableAvailable(self._rebind_jurisdiction_editor)
-
-def _rebind_jurisdiction_editor(self, *args, **kwargs):
-    props = self.AtomComplexGrid().ColumnProperties()
-    if "Jurisdiction" in props:
-        ed = props["Jurisdiction"].setdefault("EditorSettings", {})
-        props["Jurisdiction"]["EditorType"] = "checkedcomboboxedit"
-        print("🔁 Rebinding Jurisdiction editor with", len(ed.get("Items", [])), "items")
+In grid_panel.py, does the default editor type assignment for grid columns (‘Combobox’) override any EditorType set from swap_master_confirm_terms.py? If so, where should I conditionally set ‘checkedcomboboxedit’ for Jurisdiction columns?
