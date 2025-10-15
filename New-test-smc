@@ -1,13 +1,34 @@
-# --- OVERRIDE Jurisdiction editor after schema wiring ---
-props = self.AtomComplexGrid().ColumnProperties()
-print("GRID COL KEYS:", list(props.keys()))   # debug
+# --- BEGIN JURISDICTION FIX (py3.11-safe) ---
+if col == 'Jurisdiction':
+    # collect plain strings for the dropdown
+    jur_items = []
+    if row.Jurisdictions():
+        juris_objs = list(row.Jurisdictions().Grid())
+        jur_items = [str(j.Jurisdiction()) for j in juris_objs if j is not None]
 
-jkey = next((k for k in props if k.strip().lower() == "jurisdiction"), None)
-if jkey:
-    ed = props[jkey].setdefault("EditorSettings", {})
-    # hardcoded test values
-    ed["Items"] = ["Argentina", "Australia", "Austria", "Belgium"]   # list[str]
-    ed["value"] = ["Australia", "Belgium"]                           # list[str] for multi-select
-    print("GRID JUR OVERRIDE:", jkey, "items:", len(ed.get("Items") or []),
-          "value:", ed.get("value") or ed.get("selected"))
-# --------------------------------------------------------
+    # ensure EditorSettings dict exists
+    d = dict_name.setdefault(col, {}).setdefault(key, {}).setdefault('EditorSettings', {})
+
+    # items MUST be list[str] in 3.11 (objects/TermDescription will render empty)
+    d['Items'] = jur_items
+
+    # keep a valid selection (multi-select -> list[str])
+    cur = d.get('value') or d.get('Value') or d.get('selected')
+    if isinstance(cur, str):
+        cur_list = [cur]
+    elif isinstance(cur, (list, tuple)):
+        cur_list = [x for x in cur if isinstance(x, str)]
+    else:
+        cur_list = []
+
+    if jur_items:
+        if not cur_list or any(x not in jur_items for x in cur_list):
+            d['value'] = [jur_items[0]]
+        else:
+            d['value'] = cur_list
+    else:
+        d['value'] = []
+
+    # (optional) quick sanity log
+    print("JUR Items:", len(jur_items), jur_items[:5], "value:", d.get('value'))
+# --- END JURISDICTION FIX ---
