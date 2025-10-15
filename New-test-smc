@@ -1,11 +1,18 @@
-In swap_master_confirm_terms.py, check how EditorSettings for the Jurisdiction column is used after calling sync_regulation_ui_to_model().
+# --- Re-apply Jurisdiction dropdown after sync ---
+col_props = self.AtomComplexGrid().ColumnProperties()
+if "Jurisdiction" in col_props and "EditorSettings" in col_props["Jurisdiction"]:
+    ed = col_props["Jurisdiction"]["EditorSettings"]
 
-I want to confirm whether the grid’s dropdown values are being overwritten or rebuilt later, for example inside ShowTable() or during refreshGridData().
+    # hardcoded fallback values for testing
+    hardcoded_items = ["Argentina", "Australia", "Austria", "Belgium"]
+    hardcoded_selected = ["Australia", "Belgium"]
 
-Can you search all references of EditorSettings or ColumnProperties in this file and related grid files (like grid_panel.py or baml_oet_rights_grid_tool.py), and tell me:
+    # re-apply for all plausible keys
+    for k in ("Items", "items", "Options", "options", "List", "list"):
+        ed[k] = hardcoded_items
+    for k in ("value", "Value", "selected"):
+        ed[k] = hardcoded_selected
 
-1️⃣ Where the EditorSettings['Items'] values are set or rebuilt.
-2️⃣ Whether any later function (after sync_regulation_ui_to_model) resets them.
-3️⃣ If so, where is the right place to re-apply my hardcoded values permanently (post-sync or post-refresh).
-
-Also note: in 3.11 the dropdown is empty even though the logs show Items populated. 3.9 works fine.
+    print("✅ Re-applied Jurisdiction Items:", ed.get("Items") or [])
+    print("✅ Re-applied Jurisdiction Selected:", ed.get("value") or ed.get("selected"))
+# --- end re-apply ---
