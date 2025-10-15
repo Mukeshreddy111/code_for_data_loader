@@ -1,34 +1,38 @@
-# --- BEGIN JURISDICTION FIX (py3.11-safe) ---
-if col == 'Jurisdiction':
-    # collect plain strings for the dropdown
-    jur_items = []
-    if row.Jurisdictions():
-        juris_objs = list(row.Jurisdictions().Grid())
-        jur_items = [str(j.Jurisdiction()) for j in juris_objs if j is not None]
+# --- build display items (NOT codes) exactly like py39 did ---
+JurisJoin = []
+if row.Jurisdictions():
+    for j in row.Jurisdictions().Grid():
+        jur_code = j.Jurisdiction()
+        JurisJoin.append(
+            TermDescription(
+                type_name=types.JURISDICTION_OF_AGREEMENT,
+                code=jur_code,
+                description_key='description'
+            )
+        )
 
-    # ensure EditorSettings dict exists
-    d = dict_name.setdefault(col, {}).setdefault(key, {}).setdefault('EditorSettings', {})
+d = dict_name.setdefault(col, {}).setdefault(key, {}).setdefault("EditorSettings", {})
+d["Items"] = list(filter(None, JurisJoin))   # <- display items, not codes
 
-    # items MUST be list[str] in 3.11 (objects/TermDescription will render empty)
-    d['Items'] = jur_items
-
-    # keep a valid selection (multi-select -> list[str])
-    cur = d.get('value') or d.get('Value') or d.get('selected')
-    if isinstance(cur, str):
-        cur_list = [cur]
-    elif isinstance(cur, (list, tuple)):
-        cur_list = [x for x in cur if isinstance(x, str)]
-    else:
-        cur_list = []
-
-    if jur_items:
-        if not cur_list or any(x not in jur_items for x in cur_list):
-            d['value'] = [jur_items[0]]
+# normalize current selection to display strings as well
+cur = d.get("value") or d.get("Value") or d.get("selected") or []
+if isinstance(cur, str):
+    cur = [cur]
+if cur:
+    # map any code-like entries to display strings; keep ones already display
+    cur_disp = []
+    for x in cur:
+        if isinstance(x, str) and len(x) <= 3:  # looks like a code
+            cur_disp.append(TermDescription(type_name=types.JURISDICTION_OF_AGREEMENT,
+                                           code=x,
+                                           description_key='description'))
         else:
-            d['value'] = cur_list
-    else:
-        d['value'] = []
+            cur_disp.append(x)
+    # keep only values that exist in Items
+    d["value"] = [v for v in cur_disp if v in d["Items"]]
+else:
+    d["value"] = d["Items"][:1] if d["Items"] else []
 
-    # (optional) quick sanity log
-    print("JUR Items:", len(jur_items), jur_items[:5], "value:", d.get('value'))
-# --- END JURISDICTION FIX ---
+# (optional) quick debug
+print("JUR> Items(sample):", d["Items"][:5])
+print("JUR> value:", d["value"])
