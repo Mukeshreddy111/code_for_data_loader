@@ -1,1 +1,14 @@
-In grid_panel.py, does the default editor type assignment for grid columns (‘Combobox’) override any EditorType set from swap_master_confirm_terms.py? If so, where should I conditionally set ‘checkedcomboboxedit’ for Jurisdiction columns?
+1.	
+
+“In grid_panel.py (AtomSimpleGridPanel.init_show_table), after the comboboxes block runs, is EditorType for the ‘Jurisdiction’ column being reset to 'Combobox' and thus overriding what I set in swap_master_confirm_terms.py? Show the exact code path and final value.”
+Look for: a loop that calls self.update_cube_properties(..., 'EditorType', ..., 'Combobox') after your setup. If yes → that’s the overwrite.
+
+	2.	
+
+“What is the final runtime value of EditorType and EditorSettings['Items'] for the ‘Jurisdiction’ column after init_show_table() finishes? Point me to the function/line where those final values are stored.”
+Look for: confirmation of EditorType='Combobox' and whether Items is empty vs populated. This proves whether it’s an editor-type issue or an items-binding issue.
+
+	3.	
+
+“Between py39 and py311, did the AtomGrid/CubeGrid code change how Combobox consumes EditorSettings['Items'] versus checkedcomboboxedit? If yes, summarize the change and the required shape (list of str vs list of dicts) for Items in py311.”
+Look for: any change in required schema (e.g., py311 needs [{code:..., description:...}] or uses a different key than Items). If true → adjust Items shape accordingly.
