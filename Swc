@@ -1,0 +1,24 @@
+if str(col).lower() in {"jurisdiction", "jurisdictions"}:
+    print("HIT JUR BLOCK:", repr(col), "attr=", repr(attr))
+
+    # 1) make sure the nested dict path exists
+    dict_name.setdefault(col, {}).setdefault(key, {}).setdefault("value", None)
+
+    # 2) materialize once (no truthy check)
+    try:
+        juris_objs = list(row.Jurisdictions().Grid())
+    except Exception:
+        juris_objs = []
+
+    # 3) strict list of strings (3.11 friendly)
+    jur_list = [str(j.Jurisdiction()) for j in juris_objs if j is not None]
+
+    # 4) set items FIRST
+    dict_name[col][key][attr] = jur_list
+
+    # 5) ensure selected value is valid
+    cur = dict_name[col][key].get("value")
+    if jur_list and (cur is None or str(cur) not in jur_list):
+        dict_name[col][key]["value"] = jur_list[0]
+
+    print("Jur items:", len(jur_list), jur_list[:5], "value:", dict_name[col][key].get("value"))
