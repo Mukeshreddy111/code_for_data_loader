@@ -1,18 +1,16 @@
-# --- Re-apply Jurisdiction dropdown after sync ---
-col_props = self.AtomComplexGrid().ColumnProperties()
-if "Jurisdiction" in col_props and "EditorSettings" in col_props["Jurisdiction"]:
-    ed = col_props["Jurisdiction"]["EditorSettings"]
+# --- OVERRIDE the GRID Jurisdiction editor (after schema wiring) ---
+props = self.AtomComplexGrid().ColumnProperties()
+print("GRID COL KEYS:", list(props.keys()))   # for debugging key names
 
-    # hardcoded fallback values for testing
-    hardcoded_items = ["Argentina", "Australia", "Austria", "Belgium"]
-    hardcoded_selected = ["Australia", "Belgium"]
+jkey = next((k for k in props if k.strip().lower() == "jurisdiction"), None)
+if jkey:
+    ed = props[jkey].setdefault("EditorSettings", {})
 
-    # re-apply for all plausible keys
-    for k in ("Items", "items", "Options", "options", "List", "list"):
-        ed[k] = hardcoded_items
-    for k in ("value", "Value", "selected"):
-        ed[k] = hardcoded_selected
+    # hardcoded test values to confirm py311 wiring
+    ed["Items"] = ["Argentina", "Australia", "Austria", "Belgium"]
+    ed["value"] = ["Australia", "Belgium"]
 
-    print("✅ Re-applied Jurisdiction Items:", ed.get("Items") or [])
-    print("✅ Re-applied Jurisdiction Selected:", ed.get("value") or ed.get("selected"))
-# --- end re-apply ---
+    print("GRID JUR OVERRIDE:", jkey,
+          "items:", len(ed.get("Items") or []),
+          "value:", ed.get("value") or ed.get("selected"))
+# -------------------------------------------------------------------
