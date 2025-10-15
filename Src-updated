@@ -1,0 +1,25 @@
+# resolve the table for BOTH 3.9 and 3.11 builds
+try:
+    table = cubeRes.TableSrc().Table()                 # QZ 3.11 variant A
+except AttributeError:
+    try:
+        table = cubeRes.ComputedTableSource().Table()  # QZ 3.11 variant B
+    except AttributeError:
+        table = cubeRes.tableSrc.Table                 # Legacy 3.9
+
+self.sync_regulation_ui_to_model(table, self.AtomComplexGrid())
+
+
+
+++++
+
+print("cubeRes attrs:", [a for a in dir(cubeRes) if "table" in a.lower() or "src" in a.lower()])
+
+
+***
+
+grid = self.AtomComplexGrid()
+try:
+    table = grid.TableSrc().Table()      # QZ 3.11
+except AttributeError:
+    table = grid.iTableSrc().Table()     # QZ 3.9
