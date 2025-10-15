@@ -1,0 +1,1 @@
+self.sync_regulation_ui_to_model(cubeRes.tableSrc.Table, self.AtomComplexGrid())
