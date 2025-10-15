@@ -1,7 +1,20 @@
-Look at swap_master_confirm_terms.py and grid_panel.py.
+# --- RE-APPLY Jurisdiction dropdown after sync (py311 table reset) ---
+col_props = self.AtomComplexGrid().ColumnProperties()
+jur = col_props.get('Jurisdiction')
+if isinstance(jur, dict) and 'EditorSettings' in jur:
+    ed = jur['EditorSettings']
 
-We confirmed that before sync, the Jurisdiction dropdown’s EditorSettings['Items'] has the correct list, but after sync (in Python 3.11 / QZ new build) the dropdown shows empty even though the print statements show 4 values.
+    # Only (re)apply if Items look empty or missing
+    have = (ed.get('Items') or ed.get('Options') or ed.get('List') or [])
+    if not have:
+        items = ["Argentina", "Australia", "Austria", "Belgium"]
+        selected = ["Australia", "Belgium"]  # multi-select expects list[str]
 
-Find where the UI or grid resets or overwrites the EditorSettings after sync_regulation_ui_to_model(), and suggest the best place to re-apply or preserve the 'Items' and 'value' for the 'Jurisdiction' column so the dropdown displays correctly.
+        # write to all plausible keys (covers py39/py311)
+        for k in ("Items", "items", "Options", "options", "List", "list"):
+            ed[k] = items
+        for k in ("value", "Value", "selected"):
+            ed[k] = selected
 
-Show the exact function name and line number where that reset happens, and give me the corrected code block that ensures the Jurisdiction dropdown keeps the assigned hardcoded values.
+        print("Re-applied JUR Items:", items, "| selected:", selected)
+# --- end re-apply ---
