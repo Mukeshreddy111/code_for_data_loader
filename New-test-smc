@@ -1,20 +1,11 @@
-# --- RE-APPLY Jurisdiction dropdown after sync (py311 table reset) ---
-col_props = self.AtomComplexGrid().ColumnProperties()
-jur = col_props.get('Jurisdiction')
-if isinstance(jur, dict) and 'EditorSettings' in jur:
-    ed = jur['EditorSettings']
+In swap_master_confirm_terms.py, check how EditorSettings for the Jurisdiction column is used after calling sync_regulation_ui_to_model().
 
-    # Only (re)apply if Items look empty or missing
-    have = (ed.get('Items') or ed.get('Options') or ed.get('List') or [])
-    if not have:
-        items = ["Argentina", "Australia", "Austria", "Belgium"]
-        selected = ["Australia", "Belgium"]  # multi-select expects list[str]
+I want to confirm whether the grid’s dropdown values are being overwritten or rebuilt later, for example inside ShowTable() or during refreshGridData().
 
-        # write to all plausible keys (covers py39/py311)
-        for k in ("Items", "items", "Options", "options", "List", "list"):
-            ed[k] = items
-        for k in ("value", "Value", "selected"):
-            ed[k] = selected
+Can you search all references of EditorSettings or ColumnProperties in this file and related grid files (like grid_panel.py or baml_oet_rights_grid_tool.py), and tell me:
 
-        print("Re-applied JUR Items:", items, "| selected:", selected)
-# --- end re-apply ---
+1️⃣ Where the EditorSettings['Items'] values are set or rebuilt.
+2️⃣ Whether any later function (after sync_regulation_ui_to_model) resets them.
+3️⃣ If so, where is the right place to re-apply my hardcoded values permanently (post-sync or post-refresh).
+
+Also note: in 3.11 the dropdown is empty even though the logs show Items populated. 3.9 works fine.
