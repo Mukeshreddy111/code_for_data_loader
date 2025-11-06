@@ -1,0 +1,32 @@
+import pandas as pd
+
+# ---- HARDCODED FILE PATHS ----
+file_311 = r"C:\Users\Mukesh\Desktop\python_3_11.xlsx"
+file_39 = r"C:\Users\Mukesh\Desktop\python_3_9.xlsx"
+
+# ---- COLUMN NAME ----
+col_name = "Test"
+
+# ---- READ FILES ----
+print("Reading Excel files...")
+df_311 = pd.read_excel(file_311)
+df_39 = pd.read_excel(file_39)
+
+# ---- CLEAN DATA ----
+tests_311 = df_311[col_name].dropna().astype(str).str.strip()
+tests_39 = df_39[col_name].dropna().astype(str).str.strip()
+
+# ---- FIND VALUES PRESENT IN 3.11 BUT MISSING IN 3.9 ----
+missing_tests = [t for t in tests_311 if t not in set(tests_39)]
+
+# ---- PRINT RESULTS ----
+print("\n✅ Tests present in 3.11 but NOT in 3.9:\n")
+for test in missing_tests:
+    print(test)
+
+print(f"\nTotal missing tests: {len(missing_tests)}")
+
+# ---- OPTIONAL: SAVE RESULTS ----
+output_path = r"C:\Users\Mukesh\Desktop\missing_tests.xlsx"
+pd.DataFrame({col_name: missing_tests}).to_excel(output_path, index=False)
+print(f"\n📁 Missing tests saved to: {output_path}")
