@@ -1,0 +1,7 @@
+I went through the Book of Work and what we talked about. I’m interested in focusing on a few related areas around Ozone storage — things like understanding replication behavior, OFS vs S3 performance tradeoffs, WebHDFS compatibility, and helping define some sane base configs for volumes, buckets, and permissions.
+
+I’m also interested in helping with migration to CDE and Airflow, especially moving existing code and workflows to run cleanly in CDE-based Spark environments and Airflow, and figuring out where the rough edges are.
+
+On top of that, I’d like to help with RTO improvements, particularly around Iceberg snapshot replication, and updating onboarding docs so teams have clearer guardrails when they start using Ozone.
+
+I can start by getting familiar with how things work today, testing in lower envs, and documenting what works and what doesn’t so migrations and onboarding are smoother.
