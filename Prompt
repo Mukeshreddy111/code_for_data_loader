@@ -1,0 +1,23 @@
+I’m working on a POC for our Modern Data Platform using Cloudera Ozone + Iceberg.
+
+The goal is not to productionize anything yet, but to validate and recommend a standard.
+
+What I need help with:
+	1.	Create a minimal Iceberg POC on Ozone using OFS (FSO)
+	•	Use Spark with a Hadoop Iceberg catalog
+	•	Warehouse path via ofs://
+	•	Create one database and one small Iceberg table
+	•	Insert a few rows and read them back
+	2.	Validate whether the same underlying Ozone data can be accessed via the S3 Gateway
+	•	Do we have an S3 Gateway enabled for the same Ozone volumes used by OFS?
+	•	If yes, what is the correct s3a:// bucket/path mapping for an OFS path like:
+ofs://<service-id>/user/<user>/iceberg_poc/warehouse
+	3.	Confirm the supported pattern
+	•	Is OFS the recommended canonical write path for Iceberg tables?
+	•	Is S3 Gateway intended for read/integration access to the same data?
+	•	Are there any known limitations when accessing Iceberg metadata/data via S3 vs OFS?
+
+Please keep the answer minimal and platform-accurate:
+	•	No multi-catalog setups unless required
+	•	No performance benchmarking yet
+	•	Focus on correctness, supported access patterns, and guardrails
