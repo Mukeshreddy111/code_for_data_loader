@@ -1,0 +1,18 @@
+hadoop fs -mkdir -p ofs://atadops/user/gmadltd/iceberg_poc/warehouse
+hadoop fs -mkdir -p ofs://atadops/user/gmadltd/iceberg_poc/tmp
+hadoop fs -ls ofs://atadops/user/gmadltd/iceberg_poc
+
+ofs://atadops/user/gmadltd/iceberg_poc/warehouse
+
+warehouse = "ofs://atadops/user/gmadltd/iceberg_poc/warehouse"
+
+spark = (
+    SparkSession.builder
+    .appName("iceberg-ofs-poc")
+    .config("spark.sql.catalog.iceberg_poc", "org.apache.iceberg.spark.SparkCatalog")
+    .config("spark.sql.catalog.iceberg_poc.type", "hadoop")
+    .config("spark.sql.catalog.iceberg_poc.warehouse", warehouse)
+    .getOrCreate()
+)
+
+
