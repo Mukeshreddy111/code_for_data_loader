@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+import boto3
+from botocore.client import Config
+
+aws_access_key_id = "<YOUR_ACCESS_KEY>"
+aws_secret_access_key = "<YOUR_SECRET_KEY>"
+
+endpoint_url = "https://<S3G-ENDPOINT>:<PORT>"
+bucket_name = "test"
+key = "temp/hello-all-u.txt"   # make sure NO trailing "/"
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url=endpoint_url,
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+    config=Config(signature_version="s3v4"),
+    verify=False,
+)
+
+# --- Defensive cleanup: remove old object + potential "dir marker" object ---
+s3.delete_object(Bucket=bucket_name, Key=key)
+s3.delete_object(Bucket=bucket_name, Key=key.rstrip("/") + "/")
+
+# --- Fix #1: write bytes + explicit ContentLength ---
+data = "new content here\n".encode("utf-8")
+
+s3.put_object(
+    Bucket=bucket_name,
+    Key=key,
+    Body=data,
+    ContentLength=len(data),
+    ContentType="text/plain; charset=utf-8",
+)
+
+# --- Verify via S3 API (this is the real truth for S3) ---
+h = s3.head_object(Bucket=bucket_name, Key=key)
+print("HEAD OK. Size =", h["ContentLength"])
+
+obj = s3.get_object(Bucket=bucket_name, Key=key)
+print("Content:", obj["Body"].read().decode("utf-8"))
+
+# --- Optional: list objects (S3 view) ---
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix="temp/")
+print("Objects in bucket under temp/:")
+for o in response.get("Contents", []):
+    print(o["Key"])
