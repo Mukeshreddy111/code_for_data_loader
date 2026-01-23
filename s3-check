@@ -1,5 +1,22 @@
-Amazon S3 is fundamentally an object store, not a traditional file system. Directories are a logical illusion created by using object keys (filenames) that contain path delimiters (e.g., dirA/dirB/file.txt). 
-The problem arises when an S3 client uses a different addressing style than the Ozone S3 Gateway expects.
-Path-style addressing: The URL format is http://host:port/bucketname/keypath.
-Virtual-hosted-style addressing: The URL format is http://bucketname.host:port/keypath. 
-By default, the Ozone S3 Gateway often uses path-style addressing. Modern AWS SDKs and some S3 clients, however, may default to virtual-hosted-style addressing. This mismatch can cause the client to misinterpret the object path and create a bucket when a key (file) was intended, or vice-versa, leading to the "file as a directory" behavior. 
+For Python clients (Boto3): You can configure the client when creating the session.
+python
+import boto3
+s3_client = boto3.client(
+    's3',
+    endpoint_url='http://localhost:9878', // Replace with your Ozone S3 Gateway URL
+    aws_access_key_id='YOUR_ACCESS_KEY',
+    aws_secret_access_key='YOUR_SECRET_KEY',
+    config=boto3.session.Config(signature_version='s3v4', s3={'addressing_style': 'path'})
+)
+For AWS CLI: You can set the addressing style in your AWS CLI configuration.
+bash
+aws configure set s3.addressing_style path
+Then use the --endpoint-url flag in your commands. 
+2. Configure Ozone S3 Gateway for Virtual-Hosted Style (Alternative) 
+If you prefer to use the virtual-hosted style on the client side, you can enable it on the Ozone S3 Gateway by setting a domain name in the ozone-site.xml file: 
+xml
+<property>
+  <name>ozone.s3g.domain.name</name>
+  <value>s3g.internal</value>
+</property>
+After this configuration, you would access your buckets using http://bucketname.s3g.internal:port. 
