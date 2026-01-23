@@ -1,0 +1,5 @@
+Amazon S3 is fundamentally an object store, not a traditional file system. Directories are a logical illusion created by using object keys (filenames) that contain path delimiters (e.g., dirA/dirB/file.txt). 
+The problem arises when an S3 client uses a different addressing style than the Ozone S3 Gateway expects.
+Path-style addressing: The URL format is http://host:port/bucketname/keypath.
+Virtual-hosted-style addressing: The URL format is http://bucketname.host:port/keypath. 
+By default, the Ozone S3 Gateway often uses path-style addressing. Modern AWS SDKs and some S3 clients, however, may default to virtual-hosted-style addressing. This mismatch can cause the client to misinterpret the object path and create a bucket when a key (file) was intended, or vice-versa, leading to the "file as a directory" behavior. 
