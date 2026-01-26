@@ -1,1 +1,10 @@
-grep -E "ozone.s3g.http|ozone.s3g.https" ozone-default.xml
+We are running Cloudera Ozone version 1.4.0.7.1.9.1059-4.
+
+Please identify the EXACT filesystem path(s) where ozone-default.xml
+is located for this installed version in our environment.
+
+If there are multiple possible locations (parcel-based, client-only, etc.),
+list all valid paths and indicate which one is used by the running Ozone services.
+
+Do not give examples or generic locations — return the actual paths
+present on the system.
