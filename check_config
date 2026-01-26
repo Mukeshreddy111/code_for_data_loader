@@ -1,13 +1,6 @@
-Please run the extraction yourself and return the actual results.
+Please confirm whether the S3 Gateway property list you provided is COMPLETE
+for ozone.s3g.* in Cloudera Ozone 1.4.0.7.1.9.1059-4.
 
-Using the ozone-default.xml that ships with Cloudera Ozone
-version 1.4.0.7.1.9.1059-4:
-
-- Extract ALL properties related to the S3 Gateway
-- Include all ozone.s3g.* properties
-- Include any additional S3-related properties that affect S3 Gateway behavior
-
-Return the final output as a table with:
-| Property name | Default value | Description |
-
-This should be the actual extracted list, not instructions or examples.
+If not, please provide the remaining ozone.s3g.* properties
+(not just DNS-related ones), still in the same table format
+(property | default | description).
