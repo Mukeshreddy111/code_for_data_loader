@@ -1,19 +1,13 @@
-What exact Apache Ozone version (and distribution/parcel build) is currently installed in our environment?
-Please also identify the path to the ozone-default.xml file that corresponds to this running version.
+Please run the extraction yourself and return the actual results.
 
+Using the ozone-default.xml that ships with Cloudera Ozone
+version 1.4.0.7.1.9.1059-4:
 
-++++
-From the ozone-default.xml that matches our installed Ozone version, extract ALL configuration properties related to the S3 Gateway.
+- Extract ALL properties related to the S3 Gateway
+- Include all ozone.s3g.* properties
+- Include any additional S3-related properties that affect S3 Gateway behavior
 
-Specifically:
-- All properties starting with ozone.s3g.*
-- Any additional S3-related properties that affect S3 Gateway behavior (for example ozone.s3.* or relevant HTTP/TLS settings)
+Return the final output as a table with:
+| Property name | Default value | Description |
 
-For each property, return:
-- Property name
-- Default value
-- Description (from ozone-default.xml)
-
-++++++++
-Please return the results as a clean table (property | default | description) suitable for sharing in Slack or Confluence.
-Do NOT evaluate or recommend settings; this is inventory only.
+This should be the actual extracted list, not instructions or examples.
