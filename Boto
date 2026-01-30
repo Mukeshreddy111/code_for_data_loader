@@ -1,4 +1,19 @@
 from botocore.config import Config
 
 config = Config(s3={'expect_100_continue': False})
-s3 = boto3.client('s3', endpoint_url='https://your-ozone-s3g:9879', config=config)
+s3 = boto3.client('s3', endpoint_url='https://your-ozone-s3g:9879', config=config
+
+
+--
+
+import boto3
+from botocore.config import Config
+
+cfg = Config(
+    s3={
+        "addressing_style": "path",
+        "payload_signing_enabled": False,
+    }
+)
+
+s3 = boto3.client("s3", endpoint_url=ENDPOINT, config=cfg)
