@@ -1,0 +1,4 @@
+from botocore.config import Config
+
+config = Config(s3={'expect_100_continue': False})
+s3 = boto3.client('s3', endpoint_url='https://your-ozone-s3g:9879', config=config)
